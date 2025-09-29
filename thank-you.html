@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tack för din beställning</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main style="max-width:700px;margin:40px auto;padding:0 16px;">
+    <h1>Tack för din beställning!</h1>
+    <p>Vi har registrerat din order. Du får ett bekräftelsemail när betalning aktiveras.</p>
+    <p id="orderInfo" class="muted"></p>
+    <a class="btn" href="/">Till startsidan</a>
+  </main>
+  <script>
+    const p = new URLSearchParams(location.search);
+    const id = p.get('order_id');
+    if (id) document.getElementById('orderInfo').textContent = "Order-ID: " + id;
+  </script>
+</body>
+</html>
