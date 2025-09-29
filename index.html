@@ -12,19 +12,24 @@
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
-      <h1 class="brand">La Familia Health</h1>
+      <a href="/" class="brand brand-logo" aria-label="La Familia Health">
+        <img src="assets/LaFamilia_health_Logo.png" alt="La Familia Health" />
+      </a>
+
       <nav class="nav">
         <a href="#paket">Paket</a>
         <a href="#coach">AI-coach</a>
       </nav>
+
+      <!-- Header actions: Kundvagn + Till kassan -->
+      <div class="header-actions">
+        <div id="cartSummary" class="cart-summary" role="button" tabindex="0" title="Öppna kundvagn">
+          Kundvagn: 0 varor • 0 kr
+        </div>
+        <button class="btn" id="checkoutBtn">Till kassan</button>
+      </div>
     </div>
   </header>
-
-  <!-- Sticky kundvagnsöversikt + Till kassan -->
-  <div class="cart-cta sticky-cart">
-    <div id="cartSummary" class="cart-summary">Kundvagn: 0 varor • 0 kr</div>
-    <button class="btn" id="checkoutBtn">Fortsätt till beställning</button>
-  </div>
 
   <main class="container">
     <!-- Standardpaket (renderas av app.js) -->
@@ -76,12 +81,23 @@
       </div>
       <div class="row2">
         <button class="btn ghost" id="clearCartBtn">Töm kundvagn</button>
-        <button class="btn" id="checkoutBtnDrawer">Till kassan</button>
+        <button class="btn" id="checkoutBtnDrawer">Fortsätt till beställning</button>
       </div>
     </div>
   </div>
 
   <!-- App-logik -->
   <script src="app.js"></script>
+  <script>
+    // Gör så att klick på sammanfattningen öppnar kundvagnen även med tangentbord
+    (function(){
+      const el = document.getElementById('cartSummary');
+      if(!el) return;
+      el.addEventListener('click', ()=> typeof openDrawer==='function' && openDrawer());
+      el.addEventListener('keydown', (e)=> {
+        if(e.key==='Enter' || e.key===' ') { e.preventDefault(); typeof openDrawer==='function' && openDrawer(); }
+      });
+    })();
+  </script>
 </body>
 </html>
