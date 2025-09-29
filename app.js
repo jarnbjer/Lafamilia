@@ -1,5 +1,5 @@
 // ======================
-// La Familia Health - app.js (komplett med cart-summary)
+// La Familia Health - app.js (paket + AI + kundvagnspanel + checkout dummy)
 // ======================
 
 // ---------- Standardpaket (visa på startsidan) ----------
@@ -13,15 +13,12 @@ const STANDARD_BUNDLES = [
 ];
 
 // ---------- Helpers ----------
-function money(ore){
-  return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr');
-}
+function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
 
-// ---------- Enkel kundvagn i localStorage ----------
+// ---------- Kundvagn (localStorage) ----------
 function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch { return []; } }
 function saveCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
 
-// Kundvagnsöversikt (antal + summa)
 function cartTotals(){
   const cart = getCart();
   const items = cart.reduce((n, r) => n + (r.qty||1), 0);
@@ -34,7 +31,14 @@ function renderCartSummary(){
   const { items, total } = cartTotals();
   el.textContent = `Kundvagn: ${items} ${items===1?'vara':'varor'} • ${money(total)}`;
 }
-function cartChanged(){ renderCartSummary(); }
+function cartChanged(){
+  renderCartSummary();
+  renderCartDrawer();
+}
+
+// UI-panel öppna/stäng
+function openDrawer(){ document.getElementById('cartDrawer')?.classList.add('visible'); }
+function closeDrawer(){ document.getElementById('cartDrawer')?.classList.remove('visible'); }
 
 // Lägg rader i kundvagn
 function addToCartLine(name, price, qty=1, sku=null){
@@ -42,43 +46,100 @@ function addToCartLine(name, price, qty=1, sku=null){
   const i = cart.findIndex(x => x.name===name && x.price===price && x.sku===sku);
   if (i>=0) cart[i].qty += qty; else cart.push({ name, price, qty, sku });
   saveCart(cart);
-  cartChanged(); // uppdatera översikten direkt
+  cartChanged(); // uppdatera översikten/panelen
 }
-
-// Lägg paket (lista av rader)
 function addCustomToCart(pkg){
   (pkg.items||[]).forEach(it => addToCartLine(it.name, it.price, 1, it.sku||null));
-  console.log("[LF] Kundvagn:", getCart());
+  openDrawer(); // visa panelen direkt
+}
+
+function updateQty(index, delta){
+  const cart = getCart();
+  if (cart[index]){
+    cart[index].qty = Math.max(1, (cart[index].qty||1) + delta);
+    saveCart(cart);
+    cartChanged();
+  }
+}
+function removeIndex(index){
+  const cart = getCart();
+  if (cart[index]){
+    cart.splice(index,1);
+    saveCart(cart);
+    cartChanged();
+  }
+}
+function clearCart(){
+  saveCart([]);
   cartChanged();
 }
 
-function openDrawer(){ /* valfritt: öppna ev. kundvagnspanel */ }
+// Rita raderna i panelen
+function renderCartDrawer(){
+  const list = document.getElementById('cartList');
+  const sub  = document.getElementById('cartSubtotal');
+  if (!list || !sub) return;
+
+  const cart = getCart();
+  list.innerHTML = cart.length ? '' : '<div class="muted">Kundvagnen är tom.</div>';
+
+  cart.forEach((r, idx) => {
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+    const lineTotal = r.price * (r.qty||1);
+    row.innerHTML = `
+      <div>
+        <div><strong>${r.name}</strong></div>
+        <div class="small muted">${r.sku||''}</div>
+        <div class="qty">
+          <button data-act="dec" data-i="${idx}">−</button>
+          <span>${r.qty||1}</span>
+          <button data-act="inc" data-i="${idx}">+</button>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div><strong>${money(lineTotal)}</strong></div>
+        <button class="icon-btn small" data-act="rm" data-i="${idx}" title="Ta bort">🗑️</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  const { total } = cartTotals();
+  sub.textContent = money(total);
+
+  // Events för + / − / ta bort
+  list.querySelectorAll('button[data-act]').forEach(btn=>{
+    const i = parseInt(btn.getAttribute('data-i'),10);
+    const act = btn.getAttribute('data-act');
+    btn.onclick = ()=>{
+      if (act==='inc') updateQty(i, +1);
+      if (act==='dec') updateQty(i, -1);
+      if (act==='rm')  removeIndex(i);
+    };
+  });
+}
 
 // ---------- Data / API ----------
 async function fetchCatalog(){
-  console.log("[LF] Hämtar katalog …");
   const r = await fetch('/.netlify/functions/catalog');
   if (!r.ok) throw new Error("Kunde inte hämta katalog ("+r.status+")");
   const j = await r.json();
-  console.log("[LF] Katalog laddad:", j.products?.length, "artiklar");
   return new Map(j.products.map(p => [p.sku, p]));
 }
 
 // ---------- UI: rendera paketen ----------
 async function renderStandardBundles(){
   const grid = document.getElementById('productGrid');
-  if (!grid) { console.warn("[LF] Hittar inte #productGrid i HTML"); return; }
+  if (!grid) return;
 
   let map;
   try { map = await fetchCatalog(); }
   catch (e) {
-    console.error("[LF] Katalogfel:", e);
     grid.innerHTML = `<div class="muted">Kunde inte ladda produkter. Prova att ladda om.</div>`;
     return;
   }
-
   if (map.size === 0) {
-    console.warn("[LF] Katalogen är tom – kontrollera /.netlify/functions/catalog");
     grid.innerHTML = `<div class="muted">Inga produkter kunde laddas.</div>`;
     return;
   }
@@ -86,16 +147,14 @@ async function renderStandardBundles(){
   grid.innerHTML = '';
   STANDARD_BUNDLES.forEach(b => {
     const items = b.skus.map(sku => map.get(sku)).filter(Boolean);
-    if (items.length === 0) {
-      console.warn("[LF] Paket utan matchande SKU:er i katalogen:", b.title, b.skus);
-      return;
-    }
+    if (!items.length) return;
+
     let total = 0, lead = 0;
     items.forEach(p => { total += p.retail_price_ore; lead = Math.max(lead, parseInt(p.lead_days||5,10)); });
 
     const card = document.createElement('article');
     card.className = 'card product';
-    const imgUrl = b.img || 'assets/energy.jpeg'; // enkel fallback
+    const imgUrl = b.img || 'assets/energy.jpeg';
     card.innerHTML = `
       <div class="img" style="background:url('${imgUrl}') center/cover;height:220px"></div>
       <div class="padded">
@@ -109,18 +168,16 @@ async function renderStandardBundles(){
     card.querySelector('.add').addEventListener('click', ()=>{
       const pkg = { title: b.title, items: items.map(p=>({ name:p.name, price:p.retail_price_ore, sku:p.sku })), total_price: total };
       addCustomToCart(pkg);
-      openDrawer();
     });
     grid.appendChild(card);
   });
-  console.log("[LF] Paketen renderade.");
 }
 
 // ---------- AI-coach ----------
 function wireCoachForm(){
   const form = document.getElementById('coachForm');
   const resultEl = document.getElementById('coachResult');
-  if (!form || !resultEl) { console.warn("[LF] Hittar inte coachForm/coachResult"); return; }
+  if (!form || !resultEl) return;
 
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
@@ -133,7 +190,6 @@ function wireCoachForm(){
         body: JSON.stringify({ message: msg })
       });
       const data = await res.json();
-      console.log("[LF] AI-svar:", data);
 
       const reply = data.reply || 'Kunde inte generera svar.';
       let html = `<div class="coach-proposal"><h3>AI-coach</h3><p>${reply}</p>`;
@@ -159,13 +215,11 @@ function wireCoachForm(){
             items: data.package.items.map(i => ({ name:i.name, price:i.price, sku:i.sku||null })),
             total_price: data.package.total_price
           });
-          openDrawer();
         };
       }
       const tweakBtn = document.getElementById('tweakBtn');
       if (tweakBtn) { tweakBtn.onclick = ()=> alert('Säg vad du vill ändra: "koffeinfritt", "max 900 kr", "lägg till sömn" osv.'); }
     }catch(err){
-      console.error("[LF] AI-felkod:", err);
       resultEl.innerHTML = '<div class="coach-proposal">Tekniskt fel – kontrollera OPENAI_API_KEY / deploy.</div>';
     }
   });
@@ -173,7 +227,6 @@ function wireCoachForm(){
 
 // ---------- Checkout (dummy utan Stripe) ----------
 function getCustomerInfo(){
-  // Byt gärna mot ett litet formulär i kundvagnspanelen senare
   return {
     email: window.checkoutEmail || "test@example.com",
     name:  window.checkoutName  || "",
@@ -182,7 +235,7 @@ function getCustomerInfo(){
 }
 
 async function goToCheckoutDummy(){
-  const cart = getCart(); // [{name, price, qty, sku?}]
+  const cart = getCart();
   if (!cart.length) return alert("Din kundvagn är tom.");
 
   const payload = {
@@ -199,14 +252,14 @@ async function goToCheckoutDummy(){
     const j = await res.json();
     if (j?.ok && j.url) {
       // saveCart([]); // töm om du vill
-      window.location = j.url; // tack-sidan
+      window.location = j.url; // thank-you.html
     } else {
-      console.error("[LF] create-order svar:", j);
       alert("Kunde inte skapa order just nu.");
+      console.error(j);
     }
   } catch (e) {
-    console.error("[LF] create-order fel:", e);
     alert("Tekniskt fel vid beställning.");
+    console.error(e);
   }
 }
 
@@ -214,10 +267,17 @@ async function goToCheckoutDummy(){
 document.addEventListener('DOMContentLoaded', ()=>{
   renderStandardBundles();
   wireCoachForm();
-  renderCartSummary(); // visa översikten vid laddning
+  renderCartSummary();
+  renderCartDrawer();
 
-  // Bind “Till kassan”-knappen om den finns i HTML
-  document.getElementById('checkoutBtn')?.addEventListener('click', () => {
-    goToCheckoutDummy();
-  });
+  // Öppna panel via sammanfattningen
+  document.getElementById('cartSummary')?.addEventListener('click', openDrawer);
+
+  // Knapp under paketen
+  document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckoutDummy);
+
+  // Knapp i panelen + stäng/töm
+  document.getElementById('checkoutBtnDrawer')?.addEventListener('click', goToCheckoutDummy);
+  document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+  document.getElementById('closeDrawerBtn')?.addEventListener('click', closeDrawer);
 });
