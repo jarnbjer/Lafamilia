@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>La Familia Health – Hälsopaket & AI-coach</title>
 
-  <!-- Viktigt: filen heter styles.css i repot -->
   <link rel="stylesheet" href="styles.css" />
-
   <meta name="description" content="Hälsopaket med kort leveranstid. Få skräddarsydda rekommendationer av vår AI-hälsocoach." />
 </head>
 <body>
@@ -22,18 +20,18 @@
     </div>
   </header>
 
+  <!-- Sticky kundvagnsöversikt + Till kassan -->
+  <div class="cart-cta sticky-cart">
+    <div id="cartSummary" class="cart-summary">Kundvagn: 0 varor • 0 kr</div>
+    <button class="btn" id="checkoutBtn">Till kassan</button>
+  </div>
+
   <main class="container">
     <!-- Standardpaket (renderas av app.js) -->
     <section id="paket">
       <h2>Våra hälsopaket</h2>
       <div id="productGrid" class="grid"></div>
     </section>
-
-    <!-- Kundvagnsöversikt + Till kassan-knapp -->
-    <div class="cart-cta">
-      <div id="cartSummary" class="cart-summary">Kundvagn: 0 varor • 0 kr</div>
-      <button class="btn" id="checkoutBtn">Till kassan</button>
-    </div>
 
     <!-- AI-hälsocoach -->
     <section id="coach" class="coach">
@@ -44,9 +42,11 @@
           placeholder="Skriv din fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”max 900 kr”, ”har ni Omega-3?”"
           required
           aria-label="Din fråga till AI"
-          rows="2"
+          rows="3"
         ></textarea>
-        <button class="btn" type="submit">Fråga AI</button>
+        <div class="coach-actions">
+          <button class="btn" type="submit">Fråga AI</button>
+        </div>
       </form>
       <div id="coachResult"></div>
     </section>
@@ -81,7 +81,7 @@
     </div>
   </div>
 
-  <!-- App-logik (renderar paketen + AI + kundvagn) -->
+  <!-- App-logik -->
   <script src="app.js"></script>
 </body>
 </html>
