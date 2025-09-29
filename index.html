@@ -1,39 +1,51 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>La Familia Health</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>La Familia Health – Hälsopaket & AI-coach</title>
+
+  <!-- Viktigt: filen heter styles.css i repot -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <meta name="description" content="Hälsopaket med kort leveranstid. Få skräddarsydda rekommendationer av vår AI-hälsocoach." />
 </head>
 <body>
+  <!-- Header -->
   <header class="site-header">
     <h1>La Familia Health</h1>
     <p>Hälsopaket och skräddarsydda lösningar för välmående</p>
   </header>
 
   <main>
-    <!-- Sektion: Standardpaket -->
+    <!-- Standardpaket (renderas av app.js) -->
     <section>
       <h2>Våra hälsopaket</h2>
       <div id="productGrid" class="grid"></div>
     </section>
 
-    <!-- Sektion: AI Coach -->
+    <!-- AI-hälsocoach -->
     <section>
       <h2>Fråga vår AI-hälsocoach</h2>
-      <form id="coachForm" class="coach-form">
-        <input name="msg" placeholder="Ex. 'Jag vill gå ner 5 kilo' eller 'Har ni Omega-3?'" required>
+      <form id="coachForm" class="coach-form" autocomplete="off">
+        <input
+          name="msg"
+          placeholder="Ex. ”Jag vill gå ner 5 kilo” eller ”Har ni Omega-3?”"
+          required
+          aria-label="Din fråga till AI"
+        />
         <button class="btn" type="submit">Fråga AI</button>
       </form>
       <div id="coachResult"></div>
     </section>
   </main>
 
+  <!-- Footer -->
   <footer class="site-footer">
     <p>&copy; 2025 La Familia Health. Alla rättigheter förbehållna.</p>
   </footer>
 
+  <!-- App-logik (renderar paketen + AI-formulär) -->
   <script src="app.js"></script>
 </body>
 </html>
