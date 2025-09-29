@@ -7,14 +7,31 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 .container{max-width:1180px;margin:0 auto;padding:0 18px}
 
 /* Header */
-.site-header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:10}
-.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
-.brand{font-size:22px;margin:0}
-.nav a{margin-left:18px;text-decoration:none;color:var(--ink);font-weight:600}
+.site-header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:20}
+.header-inner{display:flex;align-items:center;gap:18px;justify-content:space-between;padding:10px 0}
+.brand{display:inline-flex;align-items:center;text-decoration:none;color:var(--ink)}
+.brand-logo img{height:36px;display:block} /* justera höjd vid behov */
+
+.nav{display:flex;gap:18px;align-items:center;flex:0 0 auto}
+.nav a{text-decoration:none;color:var(--ink);font-weight:600}
+
+.header-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 
 /* Knapp */
 .btn{border:none;background:var(--brand);color:#fff;padding:11px 16px;border-radius:12px;cursor:pointer;font-weight:700;box-shadow:0 6px 16px rgba(31,111,84,.18)}
 .btn.ghost{background:transparent;border:1px solid var(--brand);color:var(--brand);box-shadow:none}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+
+/* Kundvagns-sammanfattning */
+.cart-summary{
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  color:#1d2a23;
+  cursor:pointer;
+  user-select:none;
+}
 
 /* Kort & grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
@@ -30,10 +47,10 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 
 /* Footer */
 .site-footer{border-top:1px solid var(--line);margin-top:50px}
-.footer-inner{display:flex;justify-content:space-between;padding:18px 0;gap:16px}
+.footer-inner{display:flex;justify-content:space-between;padding:18px 0;gap:16px;flex-wrap:wrap}
 
 /* Drawer (kundvagnspanel) */
-.drawer{position:fixed;right:18px;bottom:18px;width:380px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.12);display:none;flex-direction:column;max-height:70vh;overflow:hidden;z-index:20}
+.drawer{position:fixed;right:18px;bottom:18px;width:380px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.12);display:none;flex-direction:column;max-height:70vh;overflow:hidden;z-index:30}
 .drawer.visible{display:flex}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .drawer-body{flex:1;overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
@@ -43,11 +60,12 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 .drawer-foot{border-top:1px solid var(--line);padding:12px 16px}
 .row{display:flex;justify-content:space-between;margin-bottom:10px}
 .row2{display:grid;grid-template-columns:1fr auto;gap:10px}
+
+/* Inputs */
 input, textarea{padding:10px;border:1px solid var(--line);border-radius:10px}
-.icon-btn{border:none;background:transparent;cursor:pointer}
 
 /* AI-coach */
-.coach{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.coach{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
 .coach .coach-proposal h3{margin:0 0 8px}
 
 /* Coach-form – knappen under textarean */
@@ -64,29 +82,13 @@ input, textarea{padding:10px;border:1px solid var(--line);border-radius:10px}
 }
 .coach-actions{margin-top:10px;text-align:right}
 
-/* Kundvagnsöversikt (sticky under header) */
-.cart-cta{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  justify-content:center;
-  margin:0; /* ingen extra luft – sticky container har egen padding */
-  padding:10px 18px;
-  background:#fbfefd;
-  border-bottom:1px solid var(--line);
-}
-.cart-summary{
-  padding:8px 12px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#fff;
-  color:#1d2a23;
-}
-.sticky-cart{
-  position:sticky;
-  top:60px;        /* justera om din header blir högre/lägre */
-  z-index:9;
-}
-
 /* Hjälputseende */
 h2{margin:24px 0 12px}
+
+/* Responsivitet */
+@media (max-width: 720px){
+  .header-inner{flex-wrap:wrap;gap:10px}
+  .nav{order:3;width:100%;justify-content:center}
+  .header-actions{order:2;margin-left:auto}
+  .brand-logo img{height:30px}
+}
