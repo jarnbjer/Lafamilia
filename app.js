@@ -132,6 +132,44 @@ function wireCoachForm(){
   });
 }
 
+// Hämta varukorg – anpassa efter hur du lagrar den
+function getCart(){
+  try { return JSON.parse(localStorage.getItem('cart') || '[]'); } catch { return []; }
+}
+
+// Exempel: samla enkel kundinfo före “kassa”
+function getCustomerInfo(){
+  // byt gärna mot ett litet formulär i din offcanvas-kundvagn
+  return {
+    email: window.checkoutEmail || "test@example.com",
+    name:  window.checkoutName  || "",
+    phone: window.checkoutPhone || ""
+  };
+}
+
+async function goToCheckoutDummy(){
+  const cart = getCart(); // [{name, price, qty, sku?}]
+  if (!cart.length) return alert("Din kundvagn är tom.");
+
+  const payload = {
+    cart,
+    customer: getCustomerInfo(),
+    shipping: { name: "", address: null, lead_days: 5 }
+  };
+
+  const res = await fetch('/.netlify/functions/create-order', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const j = await res.json();
+  if (j?.ok && j.url) {
+    window.location = j.url; // tack-sidan
+  } else {
+    alert("Kunde inte skapa order just nu.");
+  }
+}
+
+
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', ()=>{
   renderStandardBundles();
