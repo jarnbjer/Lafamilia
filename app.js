@@ -46,6 +46,41 @@ async function renderStandardBundles(){
   });
 }
 
+async function fetchCatalog(){
+  const r = await fetch('/.netlify/functions/catalog');
+  const j = await r.json();
+  return j.products; // [{sku, name, retail_price_ore, image_url, lead_days, ...}]
+}
+function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
+
+async function renderAllProducts(){
+  const list = await fetchCatalog();
+  const grid = document.getElementById('allProducts');
+  if(!grid) return;
+  grid.innerHTML = '';
+  list.forEach(p=>{
+    const card = document.createElement('article');
+    card.className = 'card product';
+    card.innerHTML = `
+      <div class="img" style="background:url('${p.image_url || 'assets/daily.jpg'}') center/cover;height:220px"></div>
+      <div class="padded">
+        <h3 class="title">${p.name}</h3>
+        <p class="desc">${p.description || ''}</p>
+        <div class="price-row"><span class="price">${money(p.retail_price_ore)}</span></div>
+        <button class="btn add">Lägg i kundvagn</button>
+        <div class="leadtime muted">Leveranstid: ${p.lead_days || 5} dagar</div>
+      </div>`;
+    card.querySelector('.add').addEventListener('click', ()=>{
+      // lägg som en vanlig rad (inte paket)
+      addToCart({ id:p.sku, name:p.name, price:p.retail_price_ore });
+      openDrawer();
+    });
+    grid.appendChild(card);
+  });
+}
+document.addEventListener('DOMContentLoaded', renderAllProducts);
+
+
 document.addEventListener('DOMContentLoaded', renderStandardBundles);
 document.getElementById('coachForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
