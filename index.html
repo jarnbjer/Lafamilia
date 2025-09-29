@@ -13,13 +13,18 @@
 <body>
   <!-- Header -->
   <header class="site-header">
-    <h1>La Familia Health</h1>
-    <p>Hälsopaket och skräddarsydda lösningar för välmående</p>
+    <div class="container header-inner">
+      <h1 class="brand">La Familia Health</h1>
+      <nav class="nav">
+        <a href="#paket">Paket</a>
+        <a href="#coach">AI-coach</a>
+      </nav>
+    </div>
   </header>
 
-  <main>
+  <main class="container">
     <!-- Standardpaket (renderas av app.js) -->
-    <section>
+    <section id="paket">
       <h2>Våra hälsopaket</h2>
       <div id="productGrid" class="grid"></div>
     </section>
@@ -31,7 +36,7 @@
     </div>
 
     <!-- AI-hälsocoach -->
-    <section>
+    <section id="coach" class="coach">
       <h2>Fråga vår AI-hälsocoach</h2>
       <form id="coachForm" class="coach-form" autocomplete="off">
         <textarea
@@ -49,10 +54,34 @@
 
   <!-- Footer -->
   <footer class="site-footer">
-    <p>&copy; 2025 La Familia Health. Alla rättigheter förbehållna.</p>
+    <div class="container footer-inner">
+      <p>&copy; 2025 La Familia Health. Alla rättigheter förbehållna.</p>
+      <p class="muted small">Leveranstider beror på valt paket och lagerstatus.</p>
+    </div>
   </footer>
 
-  <!-- App-logik (renderar paketen + AI-formulär) -->
+  <!-- Kundvagnspanel (drawer) -->
+  <div id="cartDrawer" class="drawer">
+    <div class="drawer-head">
+      <strong>Kundvagn</strong>
+      <button class="icon-btn" id="closeDrawerBtn" aria-label="Stäng">✕</button>
+    </div>
+    <div class="drawer-body" id="cartList">
+      <!-- rader renderas av app.js -->
+    </div>
+    <div class="drawer-foot">
+      <div class="row">
+        <span>Delsumma</span>
+        <strong id="cartSubtotal">0 kr</strong>
+      </div>
+      <div class="row2">
+        <button class="btn ghost" id="clearCartBtn">Töm kundvagn</button>
+        <button class="btn" id="checkoutBtnDrawer">Till kassan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App-logik (renderar paketen + AI + kundvagn) -->
   <script src="app.js"></script>
 </body>
 </html>
