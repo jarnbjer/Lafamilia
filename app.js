@@ -1,22 +1,39 @@
-// ===== Helpers =====
+// ======================
+// La Familia Health - app.js (komplett)
+// ======================
+
+// ---------- Standardpaket (visa på startsidan) ----------
 const STANDARD_BUNDLES = [
-  { title:"Daily Essentials+",     skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg",    desc:"Bas + omega-3 + kollagen" },
-  { title:"Immun Boost",           skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg",   desc:"C + selen + D + probiotika" },
-  { title:"Energi & Fokus",        skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg",desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
-  { title:"Sömn & Återhämtning",   skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg",   desc:"Magnesium + L-teanin + kvällsritual" },
-  { title:"Kickstart Vikt 30",     skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg",desc:"Fiber + protein + elektrolyter + plan" },
-  { title:"Kickstart Vegan 30",    skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpeg",desc:"Fiber + vegoprotein + elektrolyter + plan" }
+  { title:"Daily Essentials+",     skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg",     desc:"Bas + omega-3 + kollagen" },
+  { title:"Immun Boost",           skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg",    desc:"C + selen + D + probiotika" },
+  { title:"Energi & Fokus",        skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg",  desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
+  { title:"Sömn & Återhämtning",   skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg",    desc:"Magnesium + L-teanin + kvällsritual" },
+  { title:"Kickstart Vikt 30",     skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg", desc:"Fiber + protein + elektrolyter + plan" },
+  { title:"Kickstart Vegan 30",    skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpeg",  desc:"Fiber + vegoprotein + elektrolyter + plan" }
 ];
 
-function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
-
-// Fallbacks så inget kraschar om kundvagn saknas ännu
-if (typeof window.addCustomToCart !== 'function') {
-  window.addCustomToCart = (pkg)=>alert(`(Demo) Lägger i kundvagn: ${pkg.title} – ${money(pkg.total_price)}`);
+// ---------- Helpers ----------
+function money(ore){
+  return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr');
 }
-if (typeof window.openDrawer !== 'function') { window.openDrawer = ()=>{}; }
 
-// ===== Data / API =====
+// ---------- Enkel kundvagn i localStorage ----------
+function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch { return []; } }
+function saveCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+function addToCartLine(name, price, qty=1, sku=null){
+  const cart = getCart();
+  const i = cart.findIndex(x => x.name===name && x.price===price && x.sku===sku);
+  if (i>=0) cart[i].qty += qty; else cart.push({ name, price, qty, sku });
+  saveCart(cart);
+}
+function addCustomToCart(pkg){
+  // pkg: { title, items:[{name, price, sku?}], total_price }
+  (pkg.items||[]).forEach(it => addToCartLine(it.name, it.price, 1, it.sku||null));
+  console.log("[LF] Kundvagn:", getCart());
+}
+function openDrawer(){ /* valfritt: öppna ev. kundvagnspanel */ }
+
+// ---------- Data / API ----------
 async function fetchCatalog(){
   console.log("[LF] Hämtar katalog …");
   const r = await fetch('/.netlify/functions/catalog');
@@ -26,7 +43,7 @@ async function fetchCatalog(){
   return new Map(j.products.map(p => [p.sku, p]));
 }
 
-// ===== UI =====
+// ---------- UI: rendera paketen ----------
 async function renderStandardBundles(){
   const grid = document.getElementById('productGrid');
   if (!grid) { console.warn("[LF] Hittar inte #productGrid i HTML"); return; }
@@ -57,7 +74,7 @@ async function renderStandardBundles(){
 
     const card = document.createElement('article');
     card.className = 'card product';
-    const imgUrl = b.img || 'assets/kickstart.jpg'; // enkel fallback
+    const imgUrl = b.img || 'assets/energy.jpeg'; // enkel fallback
     card.innerHTML = `
       <div class="img" style="background:url('${imgUrl}') center/cover;height:220px"></div>
       <div class="padded">
@@ -69,15 +86,16 @@ async function renderStandardBundles(){
         <div class="leadtime muted">Leveranstid: ${lead || 5} dagar</div>
       </div>`;
     card.querySelector('.add').addEventListener('click', ()=>{
-      const pkg = { title: b.title, items: items.map(p=>({ name:p.name, price:p.retail_price_ore })), total_price: total };
-      addCustomToCart(pkg); openDrawer();
+      const pkg = { title: b.title, items: items.map(p=>({ name:p.name, price:p.retail_price_ore, sku:p.sku })), total_price: total };
+      addCustomToCart(pkg);
+      openDrawer();
     });
     grid.appendChild(card);
   });
   console.log("[LF] Paketen renderade.");
 }
 
-// ===== AI-coach =====
+// ---------- AI-coach ----------
 function wireCoachForm(){
   const form = document.getElementById('coachForm');
   const resultEl = document.getElementById('coachResult');
@@ -117,7 +135,7 @@ function wireCoachForm(){
         okBtn.onclick = ()=>{
           addCustomToCart({
             title: data.package.title,
-            items: data.package.items.map(i => ({ name:i.name, price:i.price })),
+            items: data.package.items.map(i => ({ name:i.name, price:i.price, sku:i.sku||null })),
             total_price: data.package.total_price
           });
           openDrawer();
@@ -132,14 +150,9 @@ function wireCoachForm(){
   });
 }
 
-// Hämta varukorg – anpassa efter hur du lagrar den
-function getCart(){
-  try { return JSON.parse(localStorage.getItem('cart') || '[]'); } catch { return []; }
-}
-
-// Exempel: samla enkel kundinfo före “kassa”
+// ---------- Checkout (dummy utan Stripe) ----------
 function getCustomerInfo(){
-  // byt gärna mot ett litet formulär i din offcanvas-kundvagn
+  // Byt gärna mot ett litet formulär i kundvagnspanelen senare
   return {
     email: window.checkoutEmail || "test@example.com",
     name:  window.checkoutName  || "",
@@ -157,21 +170,33 @@ async function goToCheckoutDummy(){
     shipping: { name: "", address: null, lead_days: 5 }
   };
 
-  const res = await fetch('/.netlify/functions/create-order', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-  const j = await res.json();
-  if (j?.ok && j.url) {
-    window.location = j.url; // tack-sidan
-  } else {
-    alert("Kunde inte skapa order just nu.");
+  try {
+    const res = await fetch('/.netlify/functions/create-order', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const j = await res.json();
+    if (j?.ok && j.url) {
+      // Töm varukorg om du vill när ordern skapats
+      // saveCart([]);
+      window.location = j.url; // tack-sidan
+    } else {
+      console.error("[LF] create-order svar:", j);
+      alert("Kunde inte skapa order just nu.");
+    }
+  } catch (e) {
+    console.error("[LF] create-order fel:", e);
+    alert("Tekniskt fel vid beställning.");
   }
 }
 
-
-// ===== Init =====
+// ---------- Init ----------
 document.addEventListener('DOMContentLoaded', ()=>{
   renderStandardBundles();
   wireCoachForm();
+
+  // Bind “Till kassan”-knappen om den finns i HTML
+  document.getElementById('checkoutBtn')?.addEventListener('click', () => {
+    goToCheckoutDummy();
+  });
 });
