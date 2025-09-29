@@ -2,10 +2,10 @@
 const STANDARD_BUNDLES = [
   { title:"Daily Essentials+",     skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg",    desc:"Bas + omega-3 + kollagen" },
   { title:"Immun Boost",           skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg",   desc:"C + selen + D + probiotika" },
-  { title:"Energi & Fokus",        skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpg",desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
+  { title:"Energi & Fokus",        skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg",desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
   { title:"Sömn & Återhämtning",   skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg",   desc:"Magnesium + L-teanin + kvällsritual" },
-  { title:"Kickstart Vikt 30",     skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpg",desc:"Fiber + protein + elektrolyter + plan" },
-  { title:"Kickstart Vegan 30",    skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpg",desc:"Fiber + vegoprotein + elektrolyter + plan" }
+  { title:"Kickstart Vikt 30",     skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg",desc:"Fiber + protein + elektrolyter + plan" },
+  { title:"Kickstart Vegan 30",    skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpeg",desc:"Fiber + vegoprotein + elektrolyter + plan" }
 ];
 
 function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
