@@ -1,4 +1,12 @@
 // ======= Standardpaket att visa på startsidan =======
+
+  if (map.size === 0) {
+    console.warn("Katalogen är tom – kolla /.netlify/functions/catalog");
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = '<div class="muted">Inga produkter kunde laddas. Prova att ladda om sidan.</div>';
+    return;
+  }
+
 const STANDARD_BUNDLES = [
   { title:"Daily Essentials+",     skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg",    desc:"Bas + omega-3 + kollagen" },
   { title:"Immun Boost",           skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/energy.jpg",   desc:"C + selen + D + probiotika" },
