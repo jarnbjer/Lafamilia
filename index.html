@@ -24,32 +24,25 @@
       <div id="productGrid" class="grid"></div>
     </section>
 
-   <!-- Till kassan-knappen -->
-    <div style="margin:20px 0; text-align:center;">
+    <!-- Kundvagnsöversikt + Till kassan-knapp -->
+    <div class="cart-cta">
+      <div id="cartSummary" class="cart-summary">Kundvagn: 0 varor • 0 kr</div>
       <button class="btn" id="checkoutBtn">Till kassan</button>
     </div>
-  </section>
 
-<div class="cart-cta">
-  <div id="cartSummary" class="cart-summary">Kundvagn: 0 varor • 0 kr</div>
-  <button class="btn" id="checkoutBtn">Till kassan</button>
-</div>
-
-    
     <!-- AI-hälsocoach -->
     <section>
       <h2>Fråga vår AI-hälsocoach</h2>
       <form id="coachForm" class="coach-form" autocomplete="off">
-  <textarea
-    name="msg"
-    placeholder="Skriv din fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”max 900 kr”, ”har ni Omega-3?”"
-    required
-    aria-label="Din fråga till AI"
-    rows="2"
-  ></textarea>
-  <button class="btn" type="submit">Fråga AI</button>
-</form>
-
+        <textarea
+          name="msg"
+          placeholder="Skriv din fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”max 900 kr”, ”har ni Omega-3?”"
+          required
+          aria-label="Din fråga till AI"
+          rows="2"
+        ></textarea>
+        <button class="btn" type="submit">Fråga AI</button>
+      </form>
       <div id="coachResult"></div>
     </section>
   </main>
