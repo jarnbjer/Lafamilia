@@ -1,124 +1,93 @@
 // ======================
-// La Familia Health - app.js (paket + AI + kundvagnspanel + checkout dummy)
+// La Familia Health - app.js (med kundvagnsfönster & nytt checkoutflöde)
 // ======================
 
-// ---------- Standardpaket (visa på startsidan) ----------
+// ---------- Standardpaket ----------
 const STANDARD_BUNDLES = [
-  { title:"Daily Essentials+",     skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg",     desc:"Bas + omega-3 + kollagen" },
-  { title:"Immun Boost",           skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg",    desc:"C + selen + D + probiotika" },
-  { title:"Energi & Fokus",        skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg",  desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
-  { title:"Sömn & Återhämtning",   skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg",    desc:"Magnesium + L-teanin + kvällsritual" },
-  { title:"Kickstart Vikt 30",     skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg", desc:"Fiber + protein + elektrolyter + plan" },
-  { title:"Kickstart Vegan 30",    skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpeg",  desc:"Fiber + vegoprotein + elektrolyter + plan" }
+  { title:"Daily Essentials+", skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg", desc:"Bas + omega-3 + kollagen" },
+  { title:"Immun Boost", skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg", desc:"C + selen + D + probiotika" },
+  { title:"Energi & Fokus", skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg", desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
+  { title:"Sömn & Återhämtning", skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg", desc:"Magnesium + L-teanin + kvällsritual" },
+  { title:"Kickstart Vikt 30", skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg", desc:"Fiber + protein + elektrolyter + plan" },
+  { title:"Kickstart Vegan 30", skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpeg", desc:"Fiber + vegoprotein + elektrolyter + plan" }
 ];
 
 // ---------- Helpers ----------
-function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
+function money(ore){
+  return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr');
+}
 
-// ---------- Kundvagn (localStorage) ----------
+// ---------- Kundvagn i localStorage ----------
 function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch { return []; } }
-function saveCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
-
-function cartTotals(){
-  const cart = getCart();
-  const items = cart.reduce((n, r) => n + (r.qty||1), 0);
-  const total = cart.reduce((s, r) => s + (r.price||0) * (r.qty||1), 0);
-  return { items, total };
-}
-function renderCartSummary(){
-  const el = document.getElementById('cartSummary');
-  if(!el) return;
-  const { items, total } = cartTotals();
-  el.textContent = `Kundvagn: ${items} ${items===1?'vara':'varor'} • ${money(total)}`;
-}
-function cartChanged(){
-  renderCartSummary();
-  renderCartDrawer();
-}
-
-// UI-panel öppna/stäng
-function openDrawer(){ document.getElementById('cartDrawer')?.classList.add('visible'); }
-function closeDrawer(){ document.getElementById('cartDrawer')?.classList.remove('visible'); }
-
-// Lägg rader i kundvagn
+function saveCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartSummary(); renderCartDrawer(); }
 function addToCartLine(name, price, qty=1, sku=null){
   const cart = getCart();
   const i = cart.findIndex(x => x.name===name && x.price===price && x.sku===sku);
   if (i>=0) cart[i].qty += qty; else cart.push({ name, price, qty, sku });
   saveCart(cart);
-  cartChanged(); // uppdatera översikten/panelen
 }
 function addCustomToCart(pkg){
   (pkg.items||[]).forEach(it => addToCartLine(it.name, it.price, 1, it.sku||null));
-  openDrawer(); // visa panelen direkt
+  openDrawer();
 }
 
-function updateQty(index, delta){
+// ---------- Cart UI ----------
+function updateCartSummary(){
   const cart = getCart();
-  if (cart[index]){
-    cart[index].qty = Math.max(1, (cart[index].qty||1) + delta);
-    saveCart(cart);
-    cartChanged();
-  }
+  const count = cart.reduce((a,c)=>a+c.qty,0);
+  const total = cart.reduce((a,c)=>a+c.price*c.qty,0);
+  const el = document.getElementById('cartSummary');
+  if (el) el.textContent = `Kundvagn: ${count} varor • ${money(total)}`;
 }
-function removeIndex(index){
-  const cart = getCart();
-  if (cart[index]){
-    cart.splice(index,1);
-    saveCart(cart);
-    cartChanged();
-  }
-}
-function clearCart(){
-  saveCart([]);
-  cartChanged();
-}
-
-// Rita raderna i panelen
 function renderCartDrawer(){
-  const list = document.getElementById('cartList');
-  const sub  = document.getElementById('cartSubtotal');
-  if (!list || !sub) return;
-
   const cart = getCart();
-  list.innerHTML = cart.length ? '' : '<div class="muted">Kundvagnen är tom.</div>';
+  const list = document.getElementById('cartList');
+  const subtotalEl = document.getElementById('cartSubtotal');
+  const proceedBtn = document.getElementById('checkoutBtnDrawer');
+  if (!list) return;
 
-  cart.forEach((r, idx) => {
+  list.innerHTML = '';
+  let subtotal = 0;
+
+  cart.forEach((item, idx)=>{
+    subtotal += item.price * item.qty;
     const row = document.createElement('div');
     row.className = 'cart-item';
-    const lineTotal = r.price * (r.qty||1);
     row.innerHTML = `
       <div>
-        <div><strong>${r.name}</strong></div>
-        <div class="small muted">${r.sku||''}</div>
-        <div class="qty">
-          <button data-act="dec" data-i="${idx}">−</button>
-          <span>${r.qty||1}</span>
-          <button data-act="inc" data-i="${idx}">+</button>
-        </div>
+        <strong>${item.name}</strong><br>
+        ${money(item.price)} x ${item.qty}
       </div>
-      <div style="text-align:right">
-        <div><strong>${money(lineTotal)}</strong></div>
-        <button class="icon-btn small" data-act="rm" data-i="${idx}" title="Ta bort">🗑️</button>
+      <div class="qty">
+        <button onclick="updateQty(${idx},-1)">−</button>
+        <span>${item.qty}</span>
+        <button onclick="updateQty(${idx},1)">+</button>
+        <button onclick="removeIndex(${idx})">🗑️</button>
       </div>
     `;
     list.appendChild(row);
   });
 
-  const { total } = cartTotals();
-  sub.textContent = money(total);
-
-  // Events för + / − / ta bort
-  list.querySelectorAll('button[data-act]').forEach(btn=>{
-    const i = parseInt(btn.getAttribute('data-i'),10);
-    const act = btn.getAttribute('data-act');
-    btn.onclick = ()=>{
-      if (act==='inc') updateQty(i, +1);
-      if (act==='dec') updateQty(i, -1);
-      if (act==='rm')  removeIndex(i);
-    };
-  });
+  if (subtotalEl) subtotalEl.textContent = money(subtotal);
+  if (proceedBtn) proceedBtn.disabled = (cart.length===0);
 }
+function updateQty(index, delta){
+  const cart = getCart();
+  if (!cart[index]) return;
+  cart[index].qty += delta;
+  if (cart[index].qty<=0) cart.splice(index,1);
+  saveCart(cart);
+}
+function removeIndex(index){
+  const cart = getCart();
+  cart.splice(index,1);
+  saveCart(cart);
+}
+function clearCart(){ saveCart([]); }
+
+// ---------- Drawer öppna/stäng ----------
+function openDrawer(){ document.getElementById('cartDrawer')?.classList.add('visible'); renderCartDrawer(); }
+function closeDrawer(){ document.getElementById('cartDrawer')?.classList.remove('visible'); }
 
 // ---------- Data / API ----------
 async function fetchCatalog(){
@@ -128,7 +97,7 @@ async function fetchCatalog(){
   return new Map(j.products.map(p => [p.sku, p]));
 }
 
-// ---------- UI: rendera paketen ----------
+// ---------- Visa standardpaket ----------
 async function renderStandardBundles(){
   const grid = document.getElementById('productGrid');
   if (!grid) return;
@@ -136,21 +105,16 @@ async function renderStandardBundles(){
   let map;
   try { map = await fetchCatalog(); }
   catch (e) {
-    grid.innerHTML = `<div class="muted">Kunde inte ladda produkter. Prova att ladda om.</div>`;
-    return;
-  }
-  if (map.size === 0) {
-    grid.innerHTML = `<div class="muted">Inga produkter kunde laddas.</div>`;
+    grid.innerHTML = `<div class="muted">Kunde inte ladda produkter.</div>`;
     return;
   }
 
   grid.innerHTML = '';
   STANDARD_BUNDLES.forEach(b => {
     const items = b.skus.map(sku => map.get(sku)).filter(Boolean);
-    if (!items.length) return;
-
-    let total = 0, lead = 0;
-    items.forEach(p => { total += p.retail_price_ore; lead = Math.max(lead, parseInt(p.lead_days||5,10)); });
+    if (items.length===0) return;
+    let total = 0, lead=0;
+    items.forEach(p=>{ total+=p.retail_price_ore; lead=Math.max(lead, parseInt(p.lead_days||5,10)); });
 
     const card = document.createElement('article');
     card.className = 'card product';
@@ -163,10 +127,10 @@ async function renderStandardBundles(){
         <ul class="contents">${items.map(p=>`<li>${p.name}</li>`).join('')}</ul>
         <div class="price-row"><span class="price">${money(total)}</span></div>
         <button class="btn add">Lägg i kundvagn</button>
-        <div class="leadtime muted">Leveranstid: ${lead || 5} dagar</div>
+        <div class="leadtime muted">Leveranstid: ${lead||5} dagar</div>
       </div>`;
     card.querySelector('.add').addEventListener('click', ()=>{
-      const pkg = { title: b.title, items: items.map(p=>({ name:p.name, price:p.retail_price_ore, sku:p.sku })), total_price: total };
+      const pkg = { title:b.title, items:items.map(p=>({name:p.name, price:p.retail_price_ore, sku:p.sku})), total_price:total };
       addCustomToCart(pkg);
     });
     grid.appendChild(card);
@@ -175,108 +139,73 @@ async function renderStandardBundles(){
 
 // ---------- AI-coach ----------
 function wireCoachForm(){
-  const form = document.getElementById('coachForm');
-  const resultEl = document.getElementById('coachResult');
-  if (!form || !resultEl) return;
+  const form=document.getElementById('coachForm');
+  const resultEl=document.getElementById('coachResult');
+  if(!form||!resultEl) return;
 
-  form.addEventListener('submit', async (e)=>{
+  form.addEventListener('submit', async e=>{
     e.preventDefault();
-    const msg = new FormData(form).get('msg');
-    resultEl.innerHTML = '<div class="muted small">Tänker…</div>';
+    const msg=new FormData(form).get('msg');
+    resultEl.innerHTML='<div class="muted small">Tänker…</div>';
 
     try{
-      const res = await fetch('/.netlify/functions/assistant', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ message: msg })
+      const res=await fetch('/.netlify/functions/assistant',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:msg})
       });
-      const data = await res.json();
-
-      const reply = data.reply || 'Kunde inte generera svar.';
-      let html = `<div class="coach-proposal"><h3>AI-coach</h3><p>${reply}</p>`;
-
-      if (data.package) {
-        const list = data.package.items.map(x => `• ${x.name} (${money(x.price)})`).join('<br>');
-        html += `
+      const data=await res.json();
+      const reply=data.reply||'Kunde inte generera svar.';
+      let html=`<div class="coach-proposal"><h3>AI-coach</h3><p>${reply}</p>`;
+      if(data.package){
+        const list=data.package.items.map(x=>`• ${x.name} (${money(x.price)})`).join('<br>');
+        html+=`
           <p><strong>${data.package.title}</strong></p>
           <p>${list}</p>
-          <p><strong>Totalt: ${money(data.package.total_price)}</strong> • ETA: ${data.package.lead_days||5} d</p>
+          <p><strong>Totalt: ${money(data.package.total_price)}</strong></p>
           <div class="row2">
             <button id="approveBtn" class="btn">Godkänn & lägg i kundvagn</button>
             <button id="tweakBtn" class="btn ghost">Justera</button>
           </div>`;
       }
-      resultEl.innerHTML = html + '</div>';
+      resultEl.innerHTML=html+'</div>';
 
-      const okBtn = document.getElementById('approveBtn');
-      if (okBtn && data.package) {
-        okBtn.onclick = ()=>{
-          addCustomToCart({
-            title: data.package.title,
-            items: data.package.items.map(i => ({ name:i.name, price:i.price, sku:i.sku||null })),
-            total_price: data.package.total_price
-          });
-        };
-      }
-      const tweakBtn = document.getElementById('tweakBtn');
-      if (tweakBtn) { tweakBtn.onclick = ()=> alert('Säg vad du vill ändra: "koffeinfritt", "max 900 kr", "lägg till sömn" osv.'); }
+      document.getElementById('approveBtn')?.addEventListener('click',()=>{
+        addCustomToCart({
+          title:data.package.title,
+          items:data.package.items.map(i=>({name:i.name,price:i.price,sku:i.sku||null})),
+          total_price:data.package.total_price
+        });
+      });
+      document.getElementById('tweakBtn')?.addEventListener('click',()=>alert('Säg vad du vill ändra: "koffeinfritt", "max 900 kr", "lägg till sömn" osv.'));
     }catch(err){
-      resultEl.innerHTML = '<div class="coach-proposal">Tekniskt fel – kontrollera OPENAI_API_KEY / deploy.</div>';
+      console.error("[LF] AI-fel:",err);
+      resultEl.innerHTML='<div class="coach-proposal">Tekniskt fel – kontrollera API-nyckel / deploy.</div>';
     }
   });
 }
 
-// ---------- Checkout (dummy utan Stripe) ----------
+// ---------- Checkout (dummy) ----------
 function getCustomerInfo(){
-  return {
-    email: window.checkoutEmail || "test@example.com",
-    name:  window.checkoutName  || "",
-    phone: window.checkoutPhone || ""
-  };
+  return { email:window.checkoutEmail||"test@example.com", name:window.checkoutName||"", phone:window.checkoutPhone||"" };
 }
-
 async function goToCheckoutDummy(){
-  const cart = getCart();
-  if (!cart.length) return alert("Din kundvagn är tom.");
+  const cart=getCart();
+  if(!cart.length) return alert("Din kundvagn är tom.");
 
-  const payload = {
-    cart,
-    customer: getCustomerInfo(),
-    shipping: { name: "", address: null, lead_days: 5 }
-  };
-
-  try {
-    const res = await fetch('/.netlify/functions/create-order', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const j = await res.json();
-    if (j?.ok && j.url) {
-      // saveCart([]); // töm om du vill
-      window.location = j.url; // thank-you.html
-    } else {
-      alert("Kunde inte skapa order just nu.");
-      console.error(j);
-    }
-  } catch (e) {
-    alert("Tekniskt fel vid beställning.");
-    console.error(e);
-  }
+  const payload={ cart, customer:getCustomerInfo(), shipping:{lead_days:5} };
+  const res=await fetch('/.netlify/functions/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await res.json();
+  if(j?.ok&&j.url){ saveCart([]); window.location=j.url; } else alert("Kunde inte skapa order.");
 }
 
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', ()=>{
   renderStandardBundles();
   wireCoachForm();
-  renderCartSummary();
-  renderCartDrawer();
+  updateCartSummary();
 
-  // Öppna panel via sammanfattningen
-  document.getElementById('cartSummary')?.addEventListener('click', openDrawer);
-
-  // Knapp under paketen
-  document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckoutDummy);
-
-  // Knapp i panelen + stäng/töm
+  // Klick för att öppna/stänga kundvagn
+  document.getElementById('checkoutBtn')?.addEventListener('click', openDrawer);
   document.getElementById('checkoutBtnDrawer')?.addEventListener('click', goToCheckoutDummy);
   document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
   document.getElementById('closeDrawerBtn')?.addEventListener('click', closeDrawer);
