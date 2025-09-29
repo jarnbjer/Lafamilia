@@ -1,5 +1,5 @@
 // ======================
-// La Familia Health - app.js (komplett)
+// La Familia Health - app.js (komplett med cart-summary)
 // ======================
 
 // ---------- Standardpaket (visa på startsidan) ----------
@@ -20,17 +20,38 @@ function money(ore){
 // ---------- Enkel kundvagn i localStorage ----------
 function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch { return []; } }
 function saveCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+
+// Kundvagnsöversikt (antal + summa)
+function cartTotals(){
+  const cart = getCart();
+  const items = cart.reduce((n, r) => n + (r.qty||1), 0);
+  const total = cart.reduce((s, r) => s + (r.price||0) * (r.qty||1), 0);
+  return { items, total };
+}
+function renderCartSummary(){
+  const el = document.getElementById('cartSummary');
+  if(!el) return;
+  const { items, total } = cartTotals();
+  el.textContent = `Kundvagn: ${items} ${items===1?'vara':'varor'} • ${money(total)}`;
+}
+function cartChanged(){ renderCartSummary(); }
+
+// Lägg rader i kundvagn
 function addToCartLine(name, price, qty=1, sku=null){
   const cart = getCart();
   const i = cart.findIndex(x => x.name===name && x.price===price && x.sku===sku);
   if (i>=0) cart[i].qty += qty; else cart.push({ name, price, qty, sku });
   saveCart(cart);
+  cartChanged(); // uppdatera översikten direkt
 }
+
+// Lägg paket (lista av rader)
 function addCustomToCart(pkg){
-  // pkg: { title, items:[{name, price, sku?}], total_price }
   (pkg.items||[]).forEach(it => addToCartLine(it.name, it.price, 1, it.sku||null));
   console.log("[LF] Kundvagn:", getCart());
+  cartChanged();
 }
+
 function openDrawer(){ /* valfritt: öppna ev. kundvagnspanel */ }
 
 // ---------- Data / API ----------
@@ -177,8 +198,7 @@ async function goToCheckoutDummy(){
     });
     const j = await res.json();
     if (j?.ok && j.url) {
-      // Töm varukorg om du vill när ordern skapats
-      // saveCart([]);
+      // saveCart([]); // töm om du vill
       window.location = j.url; // tack-sidan
     } else {
       console.error("[LF] create-order svar:", j);
@@ -194,6 +214,7 @@ async function goToCheckoutDummy(){
 document.addEventListener('DOMContentLoaded', ()=>{
   renderStandardBundles();
   wireCoachForm();
+  renderCartSummary(); // visa översikten vid laddning
 
   // Bind “Till kassan”-knappen om den finns i HTML
   document.getElementById('checkoutBtn')?.addEventListener('click', () => {
