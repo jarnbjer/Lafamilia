@@ -59,3 +59,21 @@ input{padding:10px;border:1px solid #d7e5dd;border-radius:10px}
   height: 48px;        /* samma höjd som textarea-start */
   align-self: center;  /* centrera vertikalt bredvid rutan */
 }
+
+/* ---- Kundvagnsöversikt ---- */
+.cart-cta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.cart-summary {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: #1d2a23;
+}
