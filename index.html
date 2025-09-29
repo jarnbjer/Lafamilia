@@ -28,14 +28,16 @@
     <section>
       <h2>Fråga vår AI-hälsocoach</h2>
       <form id="coachForm" class="coach-form" autocomplete="off">
-        <input
-          name="msg"
-          placeholder="Ex. ”Jag vill gå ner 5 kilo” eller ”Har ni Omega-3?”"
-          required
-          aria-label="Din fråga till AI"
-        />
-        <button class="btn" type="submit">Fråga AI</button>
-      </form>
+  <textarea
+    name="msg"
+    placeholder="Skriv din fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”max 900 kr”, ”har ni Omega-3?”"
+    required
+    aria-label="Din fråga till AI"
+    rows="2"
+  ></textarea>
+  <button class="btn" type="submit">Fråga AI</button>
+</form>
+
       <div id="coachResult"></div>
     </section>
   </main>
