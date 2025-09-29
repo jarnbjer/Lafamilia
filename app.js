@@ -1,73 +1,52 @@
-const PRODUCTS = [
-  {id:'daily', name:'Daily Essentials', img:'assets/daily.jpg', desc:'Bas för vardagshälsa.', contents:['Multivitamin','Omega‑3','D‑vitamin','Magnesium'], price:59500, compare:69500, lt:'2–4 dagar'},
-  {id:'energy', name:'Energiboost', img:'assets/energy.jpg', desc:'Mer energi i vardagen.', contents:['Adaptogener','B‑komplex','Grönt te‑extrakt (koffein)'], price:84500, compare:99500, lt:'2–4 dagar'},
-  {id:'kickstart', name:'Kickstart 30', img:'assets/kickstart.jpg', desc:'30 dagars start för viktnedgång.', contents:['Måltidsersättning','Fiber (psyllium)','Koffeinfritt stöd','Digital guide'], price:129500, compare:149500, lt:'3–5 dagar'},
-  {id:'sleep', name:'Sleep Deep', img:'assets/sleep.jpg', desc:'Magnesiumglycinat + L‑teanin + örtté.', contents:['Magnesiumglycinat','L‑teanin','Örtte'], price:89500, compare:109500, lt:'2–5 dagar'}
+// 6 standardpaket – samma som i assistant.js
+const STANDARD_BUNDLES = [
+  { title:"Daily Essentials+",     skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg",  desc:"Bas + omega-3 + kollagen" },
+  { title:"Immun Boost",           skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/energy.jpg",   desc:"C + selen + D + probiotika" },
+  { title:"Energi & Fokus",        skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/kickstart.jpg", desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
+  { title:"Sömn & Återhämtning",   skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg",    desc:"Magnesium + L-teanin + kvällsritual" },
+  { title:"Kickstart Vikt 30",     skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/kickstart.jpg", desc:"Fiber + protein + elektrolyter + plan" },
+  { title:"Kickstart Vegan 30",    skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/kickstart.jpg", desc:"Fiber + vegoprotein + elektrolyter + plan" }
 ];
 
-const state={cart:[]};
-const money=ore=>(ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr');
+function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
 
-function renderProducts(){
-  const grid=document.getElementById('productGrid');
-  const tmpl=document.getElementById('productCardTmpl');
-  PRODUCTS.forEach(p=>{
-    const node=tmpl.content.cloneNode(true);
-    const art=node.querySelector('.product'); art.dataset.id=p.id;
-    const img=node.querySelector('.img'); img.style.backgroundImage=`url(${p.img})`; img.style.backgroundSize='cover'; img.style.backgroundPosition='center'; img.style.height='220px';
-    node.querySelector('.title').textContent=p.name;
-    node.querySelector('.desc').textContent=p.desc;
-    const ul=node.querySelector('.contents'); p.contents.forEach(c=>{ const li=document.createElement('li'); li.textContent=c; ul.appendChild(li); });
-    node.querySelector('.price').textContent=money(p.price);
-    node.querySelector('.compare').textContent=money(p.compare);
-    node.querySelector('.leadtime').textContent='Leveranstid: '+p.lt;
-    node.querySelector('.add').addEventListener('click',()=>{ addToCart({id:p.id,name:p.name,price:p.price}); openDrawer(); });
-    grid.appendChild(node);
+async function fetchCatalog(){
+  const r = await fetch('/.netlify/functions/catalog');
+  const j = await r.json();
+  return new Map(j.products.map(p => [p.sku, p]));
+}
+
+async function renderStandardBundles(){
+  const map = await fetchCatalog();
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = '';
+
+  STANDARD_BUNDLES.forEach(b => {
+    const items = b.skus.map(sku => map.get(sku)).filter(Boolean);
+    let total = 0, lead = 0;
+    items.forEach(p => { total += p.retail_price_ore; lead = Math.max(lead, parseInt(p.lead_days||5,10)); });
+
+    const card = document.createElement('article');
+    card.className = 'card product';
+    card.innerHTML = `
+      <div class="img" style="background:url('${b.img}') center/cover;height:220px"></div>
+      <div class="padded">
+        <h3 class="title">${b.title}</h3>
+        <p class="desc">${b.desc || ''}</p>
+        <ul class="contents">${items.map(p=>`<li>${p.name}</li>`).join('')}</ul>
+        <div class="price-row"><span class="price">${money(total)}</span></div>
+        <button class="btn add">Lägg i kundvagn</button>
+        <div class="leadtime muted">Leveranstid: ${lead || 5} dagar</div>
+      </div>`;
+    card.querySelector('.add').addEventListener('click', ()=>{
+      const pkg = { title: b.title, items: items.map(p => ({ name:p.name, price:p.retail_price_ore })), total_price: total };
+      addCustomToCart(pkg);
+    });
+    grid.appendChild(card);
   });
 }
 
-function addToCart(item){
-  const ex = state.cart.find(i=>i.id===item.id && !i.custom);
-  if(ex){ ex.qty++; } else { state.cart.push({ ...item, qty:1 }); }
-  renderCart();
-}
-
-function addCustomToCart(pkg){
-  const id='custom-'+Date.now();
-  state.cart.push({ id, name:pkg.title+' (skrddarsytt)', price:pkg.total_price, qty:1, custom:true, details:pkg });
-  renderCart(); openDrawer();
-}
-
-function renderCart(){
-  const items=document.getElementById('cartItems'); const subtotal=document.getElementById('subtotal'); const count=document.getElementById('cartCount');
-  items.innerHTML=''; let sum=0, n=0;
-  state.cart.forEach((it,idx)=>{
-    const row=document.createElement('div'); row.className='cart-item';
-    const left=document.createElement('div');
-    left.innerHTML = `<div class="name">${it.name}</div>` + (it.custom ? `<div class="muted small">${it.details.items.map(x=>x.name).join(', ')}</div>` : '');
-    const right=document.createElement('div'); const unit=it.price; sum+=unit*it.qty; n+=it.qty;
-    right.innerHTML=`<div>${money(unit)}</div>`;
-    const qty=document.createElement('div'); qty.className='qty';
-    const minus=document.createElement('button'); minus.textContent='–';
-    const plus=document.createElement('button'); plus.textContent='+';
-    const q=document.createElement('span'); q.textContent=it.qty;
-    minus.addEventListener('click',()=>{ if(it.qty>1){ it.qty--; } else { state.cart.splice(idx,1);} renderCart(); });
-    plus.addEventListener('click',()=>{ it.qty++; renderCart(); });
-    qty.append(minus,q,plus); right.appendChild(qty);
-    row.append(left,right); items.appendChild(row);
-  });
-  subtotal.textContent=money(sum); count.textContent=n;
-}
-
-function openDrawer(){ document.getElementById('cartDrawer').classList.add('visible'); }
-function closeDrawer(){ document.getElementById('cartDrawer').classList.remove('visible'); }
-document.getElementById('cartBtn').addEventListener('click', openDrawer);
-document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
-document.getElementById('checkoutBtn').addEventListener('click',()=>alert('Demo: betalning kopplas in senare.'));
-
-renderProducts();
-
-// Real AI call
+document.addEventListener('DOMContentLoaded', renderStandardBundles);
 document.getElementById('coachForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const msg = new FormData(e.target).get('msg');
@@ -80,10 +59,10 @@ document.getElementById('coachForm').addEventListener('submit', async (e)=>{
     });
     const data = await res.json();
     const reply = data.reply || 'Kunde inte generera svar.';
-    let html = `<div class="coach-proposal"><h3>AI‑coach</h3><p>${reply}</p>`;
+    let html = `<div class="coach-proposal"><h3>AI-coach</h3><p>${reply}</p>`;
     if(data.package){
       const list = data.package.items.map(x => `• ${x.name} (${money(x.price)})`).join('<br>');
-      html += `<p><strong>${data.package.title}</strong></p><p>${list}</p><p><strong>Totalt: ${money(data.package.total_price)}</strong></p>
+      html += `<p><strong>${data.package.title}</strong></p><p>${list}</p><p><strong>Totalt: ${money(data.package.total_price)}</strong> • ETA: ${data.package.lead_days||5} d</p>
       <div class="row2"><button id="approveBtn" class="btn">Godkänn & lägg i kundvagn</button><button id="tweakBtn" class="btn ghost">Justera</button></div>`;
       el.innerHTML = html + '</div>';
       document.getElementById('approveBtn').onclick = ()=> addCustomToCart(data.package);
