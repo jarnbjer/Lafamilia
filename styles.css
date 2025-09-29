@@ -36,3 +36,26 @@ input{padding:10px;border:1px solid #d7e5dd;border-radius:10px}
 .icon-btn{border:none;background:transparent;cursor:pointer}
 .coach{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
 .coach .coach-proposal h3{margin:0 0 8px}
+.coach-form{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  margin:8px 0 12px;
+}
+
+.coach-form textarea{
+  flex: 1 1 100%;      /* fyll hela raden */
+  min-height: 48px;    /* lagom start-höjd */
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;       /* samma typsnitt som sidan */
+  line-height: 1.4;
+  resize: vertical;    /* användaren kan dra i höjden */
+}
+
+.coach-form .btn{
+  white-space: nowrap; /* knappen krymper inte konstigt */
+  height: 48px;        /* samma höjd som textarea-start */
+  align-self: center;  /* centrera vertikalt bredvid rutan */
+}
