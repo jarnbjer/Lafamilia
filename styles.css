@@ -85,6 +85,16 @@ input, textarea{padding:10px;border:1px solid var(--line);border-radius:10px}
 }
 .coach-actions{margin-top:10px;text-align:right}
 
+/* Modal: Produktdetaljer ("Läs mer") */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
+.modal.visible{display:flex}
+.modal-inner{max-width:920px;width:100%;background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.2);overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal-body{padding:14px 18px;max-height:70vh;overflow:auto}
+.prod-table{width:100%;border-collapse:collapse}
+.prod-table th,.prod-table td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top;text-align:left}
+.badge{display:inline-block;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;margin-right:6px;margin-bottom:4px;background:#fbfefd}
+
 /* Hjälputseende */
 h2{margin:24px 0 12px}
 
