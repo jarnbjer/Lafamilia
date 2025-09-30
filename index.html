@@ -1,103 +1,21 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>La Familia Health – Hälsopaket & AI-coach</title>
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/" class="brand brand-logo" aria-label="La Familia Health">
+      <img src="assets/LaFamilia_health_Logo.jpg" alt="La Familia Health" />
+      <span class="brand-text">LaFamilia Health</span>
+    </a>
 
-  <link rel="stylesheet" href="styles.css" />
-  <meta name="description" content="Hälsopaket med kort leveranstid. Få skräddarsydda rekommendationer av vår AI-hälsocoach." />
-</head>
-<body>
-  <!-- Header -->
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="/" class="brand brand-logo" aria-label="La Familia Health">
-        <img src="assets/LaFamilia_Health_Logo.jpg" alt="La Familia Health" />
-      </a>
+    <nav class="nav">
+      <a href="#paket">Paket</a>
+      <a href="#coach">AI-coach</a>
+    </nav>
 
-      <nav class="nav">
-        <a href="#paket">Paket</a>
-        <a href="#coach">AI-coach</a>
-      </nav>
-
-      <!-- Header actions: Kundvagn + Till kassan -->
-      <div class="header-actions">
-        <div id="cartSummary" class="cart-summary" role="button" tabindex="0" title="Öppna kundvagn">
-          Kundvagn: 0 varor • 0 kr
-        </div>
-        <button class="btn" id="checkoutBtn">Till kassan</button>
+    <!-- Header actions: Kundvagn + Till kassan -->
+    <div class="header-actions">
+      <div id="cartSummary" class="cart-summary" role="button" tabindex="0" title="Öppna kundvagn">
+        Kundvagn: 0 varor • 0 kr
       </div>
-    </div>
-  </header>
-
-  <main class="container">
-    <!-- Standardpaket (renderas av app.js) -->
-    <section id="paket">
-      <h2>Våra hälsopaket</h2>
-      <div id="productGrid" class="grid"></div>
-    </section>
-
-    <!-- AI-hälsocoach -->
-    <section id="coach" class="coach">
-      <h2>Fråga vår AI-hälsocoach</h2>
-      <form id="coachForm" class="coach-form" autocomplete="off">
-        <textarea
-          name="msg"
-          placeholder="Skriv din fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”max 900 kr”, ”har ni Omega-3?”"
-          required
-          aria-label="Din fråga till AI"
-          rows="3"
-        ></textarea>
-        <div class="coach-actions">
-          <button class="btn" type="submit">Fråga AI</button>
-        </div>
-      </form>
-      <div id="coachResult"></div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <p>&copy; 2025 La Familia Health. Alla rättigheter förbehållna.</p>
-      <p class="muted small">Leveranstider beror på valt paket och lagerstatus.</p>
-    </div>
-  </footer>
-
-  <!-- Kundvagnspanel (drawer) -->
-  <div id="cartDrawer" class="drawer">
-    <div class="drawer-head">
-      <strong>Kundvagn</strong>
-      <button class="icon-btn" id="closeDrawerBtn" aria-label="Stäng">✕</button>
-    </div>
-    <div class="drawer-body" id="cartList">
-      <!-- rader renderas av app.js -->
-    </div>
-    <div class="drawer-foot">
-      <div class="row">
-        <span>Delsumma</span>
-        <strong id="cartSubtotal">0 kr</strong>
-      </div>
-      <div class="row2">
-        <button class="btn ghost" id="clearCartBtn">Töm kundvagn</button>
-        <button class="btn" id="checkoutBtnDrawer">Fortsätt till beställning</button>
-      </div>
+      <button class="btn" id="checkoutBtn">Till kassan</button>
     </div>
   </div>
-
-  <!-- App-logik -->
-  <script src="app.js"></script>
-  <script>
-    // Gör så att klick på sammanfattningen öppnar kundvagnen även med tangentbord
-    (function(){
-      const el = document.getElementById('cartSummary');
-      if(!el) return;
-      el.addEventListener('click', ()=> typeof openDrawer==='function' && openDrawer());
-      el.addEventListener('keydown', (e)=> {
-        if(e.key==='Enter' || e.key===' ') { e.preventDefault(); typeof openDrawer==='function' && openDrawer(); }
-      });
-    })();
-  </script>
-</body>
-</html>
+</header>
