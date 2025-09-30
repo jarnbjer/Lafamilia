@@ -13,7 +13,6 @@
   <header class="site-header">
     <div class="container header-inner">
       <a href="/" class="brand brand-logo" aria-label="La Familia Health">
-        <!-- Ändra filnamn om loggan heter något annat -->
         <img src="assets/LaFamilia_health_Logo.jpg" alt="La Familia Health" />
         <span class="brand-text">LaFamilia Health</span>
       </a>
@@ -23,7 +22,6 @@
         <a href="#coach">AI-coach</a>
       </nav>
 
-      <!-- Header actions: Kundvagn + Till kassan -->
       <div class="header-actions">
         <div id="cartSummary" class="cart-summary" role="button" tabindex="0" title="Öppna kundvagn">
           Kundvagn: 0 varor • 0 kr
@@ -34,28 +32,34 @@
   </header>
 
   <main class="container">
-    <!-- Standardpaket (renderas av app.js) -->
+    <!-- Standardpaket -->
     <section id="paket">
       <h2>Våra hälsopaket</h2>
       <div id="productGrid" class="grid"></div>
     </section>
 
-    <!-- AI-hälsocoach -->
+    <!-- AI-hälsocoach (tvårutors-chatt) -->
     <section id="coach" class="coach">
       <h2>Fråga vår AI-hälsocoach</h2>
+
+      <!-- Inmatning (ruta 1) -->
       <form id="coachForm" class="coach-form" autocomplete="off">
         <textarea
+          id="coachInput"
           name="msg"
-          placeholder="Skriv din fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”max 900 kr”, ”har ni Omega-3?”"
+          placeholder="Beskriv ditt mål eller ställ en fråga… t.ex. ”Jag vill gå ner 5 kilo”, ”koffeinfritt”, ”har ni Omega-3?”"
           required
           aria-label="Din fråga till AI"
           rows="3"
         ></textarea>
         <div class="coach-actions">
-          <button class="btn" type="submit">Fråga AI</button>
+          <button class="btn" type="submit" id="coachSend">Skicka</button>
         </div>
+        <div class="small muted">Tips: <kbd>Enter</kbd> skickar, <kbd>Shift</kbd>+<kbd>Enter</kbd> gör ny rad.</div>
       </form>
-      <div id="coachResult"></div>
+
+      <!-- Historik (ruta 2) -->
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
     </section>
   </main>
 
@@ -67,15 +71,13 @@
     </div>
   </footer>
 
-  <!-- Kundvagnspanel (drawer) -->
+  <!-- Kundvagnspanel -->
   <div id="cartDrawer" class="drawer">
     <div class="drawer-head">
       <strong>Kundvagn</strong>
       <button class="icon-btn" id="closeDrawerBtn" aria-label="Stäng">✕</button>
     </div>
-    <div class="drawer-body" id="cartList">
-      <!-- rader renderas av app.js -->
-    </div>
+    <div class="drawer-body" id="cartList"></div>
     <div class="drawer-foot">
       <div class="row">
         <span>Delsumma</span>
@@ -102,7 +104,6 @@
   <!-- App-logik -->
   <script src="app.js"></script>
   <script>
-    // Öppna kundvagn via sammanfattningen i headern (klick + tangent)
     (function(){
       const el = document.getElementById('cartSummary');
       if(!el) return;
