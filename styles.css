@@ -10,7 +10,10 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 .site-header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:20}
 .header-inner{display:flex;align-items:center;gap:18px;justify-content:space-between;padding:10px 0}
 .brand{display:inline-flex;align-items:center;text-decoration:none;color:var(--ink)}
-.brand-logo img{height:80px;display:block} /* justera höjd vid behov */
+/* Logo + text (responsivt) */
+.brand-logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand-logo img{height:clamp(36px,6vw,80px);width:auto;display:block}
+.brand-text{font-weight:800;font-size:clamp(16px,2.2vw,24px);letter-spacing:.2px;white-space:nowrap}
 
 .nav{display:flex;gap:18px;align-items:center;flex:0 0 auto}
 .nav a{text-decoration:none;color:var(--ink);font-weight:600}
@@ -22,7 +25,7 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 .btn.ghost{background:transparent;border:1px solid var(--brand);color:var(--brand);box-shadow:none}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 
-/* Kundvagns-sammanfattning */
+/* Kundvagns-sammanfattning (header) */
 .cart-summary{
   padding:8px 12px;
   border:1px solid var(--line);
@@ -90,5 +93,5 @@ h2{margin:24px 0 12px}
   .header-inner{flex-wrap:wrap;gap:10px}
   .nav{order:3;width:100%;justify-content:center}
   .header-actions{order:2;margin-left:auto}
-  .brand-logo img{height:30px}
+  .brand-logo img{height:clamp(30px,8vw,64px)}
 }
