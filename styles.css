@@ -9,50 +9,53 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 /* Header */
 .site-header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:20}
 .header-inner{display:flex;align-items:center;gap:18px;justify-content:space-between;padding:10px 0}
-.brand{display:inline-flex;align-items:center;text-decoration:none;color:var(--ink)}
-/* Logo + text (responsivt) */
 .brand-logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
 .brand-logo img{height:clamp(36px,6vw,80px);width:auto;display:block}
 .brand-text{font-weight:800;font-size:clamp(16px,2.2vw,24px);letter-spacing:.2px;white-space:nowrap}
-
-.nav{display:flex;gap:18px;align-items:center;flex:0 0 auto}
+.nav{display:flex;gap:18px;align-items:center}
 .nav a{text-decoration:none;color:var(--ink);font-weight:600}
-
-.header-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.header-actions{display:flex;align-items:center;gap:10px}
 
 /* Knapp */
 .btn{border:none;background:var(--brand);color:#fff;padding:11px 16px;border-radius:12px;cursor:pointer;font-weight:700;box-shadow:0 6px 16px rgba(31,111,84,.18)}
 .btn.ghost{background:transparent;border:1px solid var(--brand);color:var(--brand);box-shadow:none}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 
-/* Kundvagns-sammanfattning (header) */
+/* Header-kundvagn */
 .cart-summary{
-  padding:8px 12px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#fff;
-  color:#1d2a23;
-  cursor:pointer;
-  user-select:none;
+  padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:#1d2a23;cursor:pointer;user-select:none;
 }
 
-/* Kort & grid */
+/* Grid & kort */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
 .card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.04)}
 .card .padded{padding:16px}
 .product .img{height:220px;background:#eef5f2}
 .price-row{display:flex;align-items:baseline;gap:10px;margin:10px 0}
 .price{font-weight:800}
-.compare{text-decoration:line-through;color:var(--muted);font-weight:600}
 .muted{color:var(--muted)}
 .small{font-size:12px}
 .contents{padding-left:18px;margin:8px 0}
 
-/* Footer */
-.site-footer{border-top:1px solid var(--line);margin-top:50px}
-.footer-inner{display:flex;justify-content:space-between;padding:18px 0;gap:16px;flex-wrap:wrap}
+/* AI-coach */
+.coach{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.coach-form{display:block;margin:8px 0 12px}
+.coach-form textarea{width:100%;min-height:60px;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;line-height:1.4;resize:vertical}
+.coach-actions{margin-top:10px;text-align:right}
 
-/* Drawer (kundvagnspanel) */
+/* Chattlogg (ruta 2) */
+.chat-log{
+  border:1px solid var(--line);border-radius:12px;background:#fbfefd;min-height:220px;max-height:420px;overflow:auto;
+  padding:12px;display:flex;flex-direction:column;gap:10px;
+}
+.chat-msg{display:flex;gap:10px}
+.chat-msg .bubble{padding:10px 12px;border-radius:12px;max-width:90%}
+.chat-msg.user{justify-content:flex-end}
+.chat-msg.user .bubble{background:#e7efe9}
+.chat-msg.assistant .bubble{background:#ffffff;border:1px solid var(--line)}
+.chat-msg .meta{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Drawer – kundvagn */
 .drawer{position:fixed;right:18px;bottom:18px;width:380px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.12);display:none;flex-direction:column;max-height:70vh;overflow:hidden;z-index:30}
 .drawer.visible{display:flex}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
@@ -64,28 +67,7 @@ html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe U
 .row{display:flex;justify-content:space-between;margin-bottom:10px}
 .row2{display:grid;grid-template-columns:1fr auto;gap:10px}
 
-/* Inputs */
-input, textarea{padding:10px;border:1px solid var(--line);border-radius:10px}
-
-/* AI-coach */
-.coach{margin-top:20px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
-.coach .coach-proposal h3{margin:0 0 8px}
-
-/* Coach-form – knappen under textarean */
-.coach-form{display:block;margin:8px 0 12px}
-.coach-form textarea{
-  width:100%;
-  min-height:60px;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  font:inherit;
-  line-height:1.4;
-  resize:vertical;
-}
-.coach-actions{margin-top:10px;text-align:right}
-
-/* Modal: Produktdetaljer ("Läs mer") */
+/* Modal (Läs mer) */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
 .modal.visible{display:flex}
 .modal-inner{max-width:920px;width:100%;background:#fff;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.2);overflow:hidden}
@@ -95,10 +77,10 @@ input, textarea{padding:10px;border:1px solid var(--line);border-radius:10px}
 .prod-table th,.prod-table td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top;text-align:left}
 .badge{display:inline-block;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;margin-right:6px;margin-bottom:4px;background:#fbfefd}
 
-/* Hjälputseende */
-h2{margin:24px 0 12px}
+/* Footer */
+.site-footer{border-top:1px solid var(--line);margin-top:50px}
+.footer-inner{display:flex;justify-content:space-between;padding:18px 0;gap:16px;flex-wrap:wrap}
 
-/* Responsivitet */
 @media (max-width: 720px){
   .header-inner{flex-wrap:wrap;gap:10px}
   .nav{order:3;width:100%;justify-content:center}
