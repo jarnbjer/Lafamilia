@@ -1,5 +1,5 @@
 // ======================
-// La Familia Health - app.js (paket + AI + kundvagn + Läs mer + chatt-historik + detaljerad förklaring)
+// La Familia Health - app.js (smartare AI + paket + kundvagn + Läs mer + chatt + bildstöd)
 // ======================
 
 // ---------- Standardpaket ----------
@@ -131,9 +131,20 @@ function openDetailsModal(pkgTitle, items){
           const desc  = safe(p.description_short);
           const link  = safe(p.product_page_url);
           const linkHtml = link ? `<br><a href="${link}" target="_blank" rel="noopener">Produktlänk</a>` : '';
+          const img   = safe(p.image_url);
+          const imgHtml = img ? `<div class="thumb"><img src="${img}" alt="${safe(p.name)}"></div>` : '';
           return `
             <tr>
-              <td><strong>${safe(p.name)}</strong><br><span class="small muted">${safe(p.sku||'')}</span><br>${desc||''}${linkHtml}</td>
+              <td>
+                <div class="prod-cell">
+                  ${imgHtml}
+                  <div>
+                    <strong>${safe(p.name)}</strong><br>
+                    <span class="small muted">${safe(p.sku||'')}</span><br>
+                    ${desc||''}${linkHtml}
+                  </div>
+                </div>
+              </td>
               <td>${purity || '-'}</td>
               <td>${dose || '-'}</td>
               <td>${misc || '-'}</td>
@@ -164,14 +175,18 @@ async function renderStandardBundles(){
   STANDARD_BUNDLES.forEach(b => {
     const items = b.skus.map(sku => map.get(sku)).filter(Boolean);
     if (!items.length) return;
+
+    // Paketbild: försök ta första produktens image_url, annars b.img, annars fallback
+    const firstImage = items.find(p => p.image_url && String(p.image_url).trim().length)?.image_url;
+    const coverImg = firstImage || b.img || 'assets/energy.jpeg';
+
     let total = 0, lead=0;
     items.forEach(p=>{ total+=p.retail_price_ore; lead=Math.max(lead, parseInt(p.lead_days||5,10)); });
 
     const card = document.createElement('article');
     card.className = 'card product';
-    const imgUrl = b.img || 'assets/energy.jpeg';
     card.innerHTML = `
-      <div class="img" style="background:url('${imgUrl}') center/cover;height:220px"></div>
+      <div class="img" style="background:url('${coverImg}') center/cover;height:220px"></div>
       <div class="padded">
         <h3 class="title">${b.title}</h3>
         <p class="desc">${b.desc || ''}</p>
@@ -211,7 +226,32 @@ function addChat(role, html){
   log.scrollTop = log.scrollHeight;
 }
 
-// ---------- AI-coach (mer detaljerad förklaring + historik + enter/shift-enter) ----------
+// ---------- AI: smartare system-prompt (informera först, sälj sen) ----------
+function buildSystemPrompt(catalogBrief){
+  return `
+Du är en svensk hälsocoach på en e-handels-sida. Anpassa svaret efter frågetypen:
+
+1) Informationsfråga (t.ex. "varför är kollagen bra?", "hur funkar magnesium?"):
+   - Svara först pedagogiskt med fysiologiska effekter, relevanta kroppssystem (hud/leder/skelett/immun/hjärna/mage/sömn/energi/inflammation m.fl.) och kort mekanism.
+   - Ta med typisk dosering/användning och säkerhetsnotiser om relevant.
+   - Avsluta med en mjuk fråga: "Vill du att jag visar ett paket eller en produkt som passar detta?"
+
+2) Mål/rekommendationsfråga (t.ex. "jag vill gå ner 5 kilo", "vad rekommenderar du mot sömnproblem?"):
+   - Ge först korta livsstilsråd (kost/träning/sömn/stress) om relevant.
+   - Föreslå sedan ett paket eller individuella produkter från katalogen. Presentera tydligt namn, innehåll och totalpris.
+   - Fråga om användaren vill lägga till i kundvagnen eller justera.
+
+Viktigt:
+- Blanda inte ihop: besvara alltid själva frågan först innan ev. rekommendation.
+- Använd produktfakta från katalogen när det passar: renhet, certifieringar, tester, dosering, vegan, allergener, källa.
+- Svara alltid på svenska.
+
+KATALOG (komprimerad):
+${catalogBrief}
+`.trim();
+}
+
+// ---------- AI-coach (detaljerat svar + historik + enter/shift-enter) ----------
 function wireCoachForm(){
   const form = document.getElementById('coachForm');
   const input = document.getElementById('coachInput');
@@ -235,7 +275,7 @@ function wireCoachForm(){
     input.focus();
 
     try{
-      // kondenserad katalog för fakta
+      // kondensera katalogen för kontext
       const brief = Array.from(CATALOG_MAP.values()).map(p=>{
         const f = [
           `namn:${safe(p.name)}`, p.sku?`sku:${safe(p.sku)}`:'',
@@ -247,29 +287,19 @@ function wireCoachForm(){
         return `- ${f}`;
       }).join('\n');
 
-      const sysPrompt =
-`Du är en svensk personlig hälsocoach.
-Krav när du föreslår ett paket:
-- Presentera rekommendation först (paket eller produkter).
-- Lägg sedan en rubrik: "Varför detta paket – detaljerad genomgång".
-- För varje produkt: ge punktlista med:
-  • Vilka system/mål den stödjer (hud/hår/naglar, leder, skelett, immunförsvar, hjärta/kärl, hjärna/fokus, mage/tarm, energi/metabolism, sömn/stress, vikt/fettförbränning, inflammation) – endast de som är relevanta.
-  • Kort mekanism (t.ex. "EPA/DHA → minskar inflammation via resolviner").
-  • Typisk dosering/användning (om känd) och ev. säkerhetsnotis/kontraindikation.
-- Håll språket konkret och begripligt. Referera till produktfakta nedan om möjligt.
-
-Produktfakta (katalog):
-${brief}
-Svara på svenska.`;
+      const systemPrompt = buildSystemPrompt(brief);
 
       const res = await fetch('/.netlify/functions/assistant', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ message: `${sysPrompt}\n\nKundens fråga/behov:\n"${msg}"` })
+        body: JSON.stringify({
+          // vi kapslar systeminstruktionerna ihop med kundens fråga
+          message: `${systemPrompt}\n\nKundens fråga:\n"${msg}"`
+        })
       });
       const data = await res.json();
 
-      // bygg svar + ev. köpknapp
-      let html = data.reply ? data.reply : 'Kunde inte generera svar.';
+      // Bygg svar – lägg endast köp-UI om ett paket faktiskt föreslogs
+      let html = data.reply ? data.reply : 'Kunde inte generera svar just nu.';
       if (data.package) {
         const list = data.package.items.map(x => `• ${x.name} (${money(x.price)})`).join('<br>');
         const uid = 'pkg' + Math.random().toString(36).slice(2,8);
@@ -284,7 +314,6 @@ Svara på svenska.`;
             </div>
           </div>
         `;
-        // Efter att vi lagt in i chatten kan vi binda knapparna
         setTimeout(()=>{
           const approve = document.getElementById(`${uid}_approve`);
           const more = document.getElementById(`${uid}_more`);
@@ -296,7 +325,6 @@ Svara på svenska.`;
             });
           };
           if (more){
-            // försök hitta katalogobjekt för modal
             const items = (data.package.items||[])
               .map(i => (i.sku && CATALOG_MAP.get(i.sku)) || Array.from(CATALOG_MAP.values()).find(p=>p.name===i.name))
               .filter(Boolean);
