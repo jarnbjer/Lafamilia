@@ -1,21 +1,20 @@
 // ======================
-// La Familia Health - app.js (paket + AI + kundvagnsfönster + "förklara varför" + nytt checkoutflöde)
+// La Familia Health - app.js (paket + AI + kundvagn + Läs mer + rikare produktdata)
 // ======================
 
 // ---------- Standardpaket ----------
 const STANDARD_BUNDLES = [
   { title:"Daily Essentials+", skus:["HF-001","HF-003","HF-014"], img:"assets/daily.jpg", desc:"Bas + omega-3 + kollagen" },
-  { title:"Immun Boost", skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg", desc:"C + selen + D + probiotika" },
-  { title:"Energi & Fokus", skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg", desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
+  { title:"Immun Boost",       skus:["HF-006","HF-018","HF-002","HF-008"], img:"assets/boost.jpg",  desc:"C + selen + D + probiotika" },
+  { title:"Energi & Fokus",    skus:["HF-005","HF-022","HF-023","HF-013"], img:"assets/energy.jpeg",desc:"B-komplex + rhodiola + grönt te + elektrolyter" },
   { title:"Sömn & Återhämtning", skus:["HF-004","HF-021","HF-026","HF-039","HF-040"], img:"assets/sleep.jpg", desc:"Magnesium + L-teanin + kvällsritual" },
-  { title:"Kickstart Vikt 30", skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg", desc:"Fiber + protein + elektrolyter + plan" },
+  { title:"Kickstart Vikt 30", skus:["HF-009","HF-011","HF-013","HF-001","HF-031"], img:"assets/weight.jpeg",desc:"Fiber + protein + elektrolyter + plan" },
   { title:"Kickstart Vegan 30", skus:["HF-009","HF-012","HF-013","HF-001","HF-031"], img:"assets/vegan.jpeg", desc:"Fiber + vegoprotein + elektrolyter + plan" }
 ];
 
 // ---------- Helpers ----------
-function money(ore){
-  return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr');
-}
+function money(ore){ return (ore/100).toLocaleString('sv-SE',{style:'currency',currency:'SEK'}).replace('SEK','kr'); }
+const safe = (s)=> (s==null?'':String(s));
 
 // ---------- Kundvagn i localStorage ----------
 function getCart(){ try { return JSON.parse(localStorage.getItem('cart')||'[]'); } catch { return []; } }
@@ -47,9 +46,7 @@ function renderCartDrawer(){
   if (!list) return;
 
   list.innerHTML = '';
-  if (!cart.length) {
-    list.innerHTML = '<div class="muted">Kundvagnen är tom.</div>';
-  }
+  if (!cart.length) list.innerHTML = '<div class="muted">Kundvagnen är tom.</div>';
 
   let subtotal = 0;
   cart.forEach((item, idx)=>{
@@ -93,14 +90,66 @@ function openDrawer(){ document.getElementById('cartDrawer')?.classList.add('vis
 function closeDrawer(){ document.getElementById('cartDrawer')?.classList.remove('visible'); }
 
 // ---------- Data / API ----------
+// Förväntade extra fält i katalogen per produkt (om de finns i ert Sheet/CSV):
+// description_short, purity, source, certifications, third_party_tests, allergens, vegan, dosage, usage_notes, scientific_refs, product_page_url, image_url
+let CATALOG_MAP = new Map();
 async function fetchCatalog(){
   const r = await fetch('/.netlify/functions/catalog');
   if (!r.ok) throw new Error("Kunde inte hämta katalog ("+r.status+")");
   const j = await r.json();
-  return new Map(j.products.map(p => [p.sku, p]));
+  CATALOG_MAP = new Map(j.products.map(p => [p.sku, p]));
+  return CATALOG_MAP;
 }
 
-// ---------- Visa standardpaket ----------
+// ---------- UI: “Läs mer” modal ----------
+function openDetailsModal(pkgTitle, items){
+  const m = document.getElementById('detailsModal');
+  const body = document.getElementById('detailsBody');
+  const title = document.getElementById('detailsTitle');
+  if (!m || !body || !title) return;
+
+  title.textContent = `Paket: ${pkgTitle}`;
+  body.innerHTML = `
+    <table class="prod-table">
+      <thead>
+        <tr>
+          <th>Produkt</th>
+          <th>Renhet & tester</th>
+          <th>Dosering & användning</th>
+          <th>Övrigt</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(p=>{
+          const purity = safe(p.purity) || safe(p.third_party_tests);
+          const dose  = [safe(p.dosage), safe(p.usage_notes)].filter(Boolean).join('<br>');
+          const misc  = [
+            p.vegan ? 'Vegan' : '',
+            safe(p.allergens),
+            safe(p.certifications),
+            safe(p.source)
+          ].filter(Boolean).map(x=>`<span class="badge">${x}</span>`).join(' ');
+          const desc  = safe(p.description_short);
+          const link  = safe(p.product_page_url);
+          const linkHtml = link ? `<br><a href="${link}" target="_blank" rel="noopener">Produktlänk</a>` : '';
+          return `
+            <tr>
+              <td><strong>${safe(p.name)}</strong><br><span class="small muted">${safe(p.sku||'')}</span><br>${desc||''}${linkHtml}</td>
+              <td>${purity || '-'}</td>
+              <td>${dose || '-'}</td>
+              <td>${misc || '-'}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  m.classList.add('visible');
+}
+function closeDetailsModal(){ document.getElementById('detailsModal')?.classList.remove('visible'); }
+
+// ---------- UI: rendera paketen ----------
 async function renderStandardBundles(){
   const grid = document.getElementById('productGrid');
   if (!grid) return;
@@ -129,18 +178,29 @@ async function renderStandardBundles(){
         <p class="desc">${b.desc || ''}</p>
         <ul class="contents">${items.map(p=>`<li>${p.name}</li>`).join('')}</ul>
         <div class="price-row"><span class="price">${money(total)}</span></div>
-        <button class="btn add">Lägg i kundvagn</button>
+        <div class="row2" style="margin-top:8px;">
+          <button class="btn add">Lägg i kundvagn</button>
+          <button class="btn ghost more">Läs mer</button>
+        </div>
         <div class="leadtime muted">Leveranstid: ${lead||5} dagar</div>
       </div>`;
+
+    // Lägg i kundvagn
     card.querySelector('.add').addEventListener('click', ()=>{
       const pkg = { title:b.title, items:items.map(p=>({name:p.name, price:p.retail_price_ore, sku:p.sku})), total_price:total };
       addCustomToCart(pkg);
     });
+
+    // Läs mer → modal
+    card.querySelector('.more').addEventListener('click', ()=>{
+      openDetailsModal(b.title, items);
+    });
+
     grid.appendChild(card);
   });
 }
 
-// ---------- AI-coach (smartare + förklaring på begäran) ----------
+// ---------- AI-coach (smartare + förklaring på begäran + använder katalogdata) ----------
 function wireCoachForm(){
   const form=document.getElementById('coachForm');
   const resultEl=document.getElementById('coachResult');
@@ -152,11 +212,41 @@ function wireCoachForm(){
     resultEl.innerHTML='<div class="muted small">Tänker…</div>';
 
     try{
+      // skapa kondenserad katalog för AI
+      const catalogBrief = Array.from(CATALOG_MAP.values()).map(p=>{
+        const fields = [
+          `namn:${safe(p.name)}`,
+          p.sku ? `sku:${safe(p.sku)}` : '',
+          p.purity ? `renhet:${safe(p.purity)}` : '',
+          p.third_party_tests ? `tester:${safe(p.third_party_tests)}` : '',
+          p.certifications ? `cert:${safe(p.certifications)}` : '',
+          p.allergens ? `allergener:${safe(p.allergens)}` : '',
+          (p.vegan!=null) ? `vegan:${p.vegan?'ja':'nej'}` : '',
+          p.dosage ? `dosering:${safe(p.dosage)}` : '',
+          p.usage_notes ? `användning:${safe(p.usage_notes)}` : '',
+          p.source ? `källa:${safe(p.source)}` : ''
+        ].filter(Boolean).join('; ');
+        return `- ${fields}`;
+      }).join('\n');
+
       const res=await fetch('/.netlify/functions/assistant',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          message: `Agera som personlig hälsocoach. Om relevant, föreslå även ett enkelt träningsprogram (3–4 pass/vecka, 20–40 min/pass) som matchar målet och nivån, inkl. vila/återhämtning. Använd kundens fråga nedan som behovsbeskrivning:\n\n"${msg}"\n\nSvara kort och konkret på svenska.`
+          message:
+`Du är en svensk personlig hälsocoach. 
+1) Föreslå paket eller individuella produkter som matchar behovet. 
+2) Om relevant, föreslå ett enkelt träningsprogram (3–4 pass/vecka, 20–40 min/pass). 
+3) Om kund ber om mer info: använd produktfakta (renhet, certifieringar, dosering, allergener) från KATALOGEN nedan.
+4) När du ger ett paket, returnera även en kort sammanfattning av varför.
+
+KUNDENS BEHOV:
+"${msg}"
+
+KATALOG (produktfakta i punktlista):
+${catalogBrief}
+
+Svara kort och konkret på svenska.`
         })
       });
       const data=await res.json();
@@ -203,11 +293,9 @@ function wireCoachForm(){
         if(box) box.innerHTML='Tar fram en kort förklaring…';
         try{
           const explainPrompt =
-            `Förklara pedagogiskt och kort varför följande upplägg passar kundens behov. ` +
-            `Utgå från behovet: "${msg}". Paket: ${data.package.title}. ` +
-            `Produkter: ${data.package.items.map(i => i.name).join(', ')}. ` +
-            `Inkludera gärna hur ett enkelt träningsupplägg (om relevant) kompletterar paketet. Svara på svenska.`;
-
+`Förklara kort och pedagogiskt varför upplägget ovan passar kunden. 
+Ta med de viktigaste produktfakta (t.ex. renhet, certifieringar, dosering, tester) för de listade produkterna. 
+Svara på svenska.`;
           const r = await fetch('/.netlify/functions/assistant', {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ message: explainPrompt })
@@ -256,9 +344,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireCoachForm();
   updateCartSummary();
 
-  // Öppna/stäng kundvagn från header
+  // Header-knappar
   document.getElementById('checkoutBtn')?.addEventListener('click', openDrawer);
   document.getElementById('checkoutBtnDrawer')?.addEventListener('click', goToCheckoutDummy);
   document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
   document.getElementById('closeDrawerBtn')?.addEventListener('click', closeDrawer);
+
+  // Modal close
+  document.getElementById('detailsClose')?.addEventListener('click', closeDetailsModal);
+  document.getElementById('detailsModal')?.addEventListener('click', (e)=>{ if(e.target.id==='detailsModal') closeDetailsModal(); });
 });
