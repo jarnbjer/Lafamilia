@@ -4,24 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>La Familia Health – Hälsopaket & AI-coach</title>
-
   <link rel="stylesheet" href="styles.css" />
-
   <meta name="description" content="Hälsopaket med kort leveranstid. Få skräddarsydda rekommendationer av vår AI-hälsocoach." />
 </head>
 <body>
   <!-- Header -->
   <header class="site-header">
-    <div class="header-inner">
-      <div class="brand">
+    <div class="header-inner container">
+      <!-- Klickbar logga + text -->
+      <button class="brand-btn" id="brandButton" aria-label="Öppna Om oss">
         <img src="assets/LaFamilia_health_Logo.jpg" alt="LaFamilia logo" class="logo" />
         <span class="brand-text">LaFamilia Health</span>
-      </div>
+      </button>
+
       <nav class="nav">
         <a href="#paket">Paket</a>
         <a href="#coach">AI-coach</a>
-        <a href="#om">Om</a>
+        <a href="#" id="openAboutLink">Om</a>
       </nav>
+
       <button class="btn" id="checkoutBtn">Till kassan</button>
     </div>
   </header>
@@ -49,39 +50,50 @@
           required
           aria-label="Din fråga till AI"
           rows="2"
+          id="coachInput"
         ></textarea>
         <button class="btn" type="submit">Fråga AI</button>
       </form>
-      <div id="coachResult"></div>
-    </section>
-
-    <!-- OM OSS -->
-    <section id="om" class="about">
-      <div class="about-grid">
-        <div class="about-text">
-          <h2>Om oss</h2>
-          <p>
-            Vi som står bakom denna hemsida är en familj som starkt brinner för att nå ett positivt välbefinnande i vår vardag.
-            Vi alla är intresserade av att leva ett hälsosamt liv där vi kombinerar ett aktivt liv med träning med ett sunt leverne.
-            Vi vet att inget kommer gratis utan att allt kräver fokus och målmedvetenhet. Men oavsett ambition måste kroppen ibland ändå tillföras olika typer av tillskott,
-            men detta ska göras med eftertanke och med rätt typ av preparat. Vi har därför byggt en sida som består just av dessa preparat som uppfyller våra högt ställda krav
-            där även personer som är osäkra kan få stöd.
-          </p>
-          <p class="signoff"><strong>Vi önskar dig en sund och glädjefylld vardag.</strong></p>
-        </div>
-
-        <figure class="about-photo">
-          <img src="assets/family.jpeg" alt="Familjen bakom LaFamilia Health" />
-        </figure>
-      </div>
+      <div id="coachResult" class="coach"></div>
     </section>
   </main>
 
   <!-- Footer -->
   <footer class="site-footer">
-    <p>&copy; 2025 La Familia Health. Alla rättigheter förbehållna.</p>
+    <div class="container">
+      <p>&copy; 2025 La Familia Health. Alla rättigheter förbehållna.</p>
+    </div>
   </footer>
 
+  <!-- MODAL: OM OSS (överliggande fönster) -->
+  <div id="aboutModal" class="modal" aria-hidden="true">
+    <div class="modal-inner wide" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+      <div class="modal-head">
+        <h3 id="aboutTitle">Om oss</h3>
+        <button class="icon-btn" id="aboutClose" aria-label="Stäng">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="about-grid">
+          <div class="about-text">
+            <p>
+              Vi som står bakom denna hemsida är en familj som starkt brinner för att nå ett positivt välbefinnande i vår vardag.
+              Vi alla är intresserade av att leva ett hälsosamt liv där vi kombinerar ett aktivt liv med träning med ett sunt leverne.
+              Vi vet att inget kommer gratis utan att allt kräver fokus och målmedvetenhet. Men oavsett ambition måste kroppen ibland ändå
+              tillföras olika typer av tillskott, men detta ska göras med eftertanke och med rätt typ av preparat. Vi har därför byggt en sida
+              som består just av dessa preparat som uppfyller våra högt ställda krav där även personer som är osäkra kan få stöd.
+            </p>
+            <p class="signoff"><strong>Vi önskar dig en sund och glädjefylld vardag.</strong></p>
+          </div>
+          <figure class="about-photo">
+            <!-- Använd ditt filnamn; byt vid behov till assets/LaFamilia.jpeg -->
+            <img src="assets/LaFamilia.jpeg" alt="Familjen bakom LaFamilia Health" />
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App-logik -->
   <script src="app.js"></script>
 </body>
 </html>
