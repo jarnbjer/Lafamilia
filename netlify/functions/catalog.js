@@ -1,59 +1,72 @@
 // netlify/functions/catalog.js
-
-const FALLBACK_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR0sAcNtkP2wrN-oFq7fF6LbdlAle37JL557zaorNxuyaXrWiw91IvQ4it8c79PRlJLWfp0E2R7vxrH/pub?output=csv";
-
-function parseCSV(csvText) {
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-
-  for (let i = 0; i < csvText.length; i++) {
-    const c = csvText[i], next = csvText[i+1];
-    if (inQuotes) {
-      if (c === '"' && next === '"') { field += '"'; i++; }
-      else if (c === '"') { inQuotes = false; }
-      else { field += c; }
-    } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ',') { row.push(field); field = ''; }
-      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-      else if (c === '\r') { /* ignore */ }
-      else { field += c; }
-    }
-  }
-  row.push(field); rows.push(row);
-  return rows;
-}
-
-export async function handler() {
+exports.handler = async () => {
   try {
-    const url = process.env.CATALOG_CSV_URL || FALLBACK_URL;
-
-    const csv = await fetch(url).then(r => {
-      if (!r.ok) throw new Error(`CSV fetch failed: ${r.status}`);
-      return r.text();
-    });
-
-    const table = parseCSV(csv).filter(r => r.some(x => (x ?? '').toString().trim() !== ''));
-    if (table.length < 2) {
-      return { statusCode: 200, headers:{'Content-Type':'application/json'}, body: JSON.stringify({ products: [] }) };
+    const url = process.env.CATALOG_CSV_URL;
+    if (!url) {
+      return { statusCode: 500, body: JSON.stringify({ error: "CATALOG_CSV_URL saknas i miljövariabler" }) };
     }
 
-    const headers = table[0].map(h => String(h).trim());
-    const products = table.slice(1).map(cols => {
+    const res = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
+    if (!res.ok) {
+      return { statusCode: 502, body: JSON.stringify({ error: `Kunde inte hämta CSV (${res.status})` }) };
+    }
+    const csvText = await res.text();
+
+    // Enkel CSV-parser: hanterar citat & kommatecken
+    const rows = parseCSV(csvText);
+    if (rows.length === 0) {
+      return { statusCode: 200, body: JSON.stringify({ products: [] }) };
+    }
+
+    const headers = rows[0].map(h => h.trim());
+    const products = rows.slice(1).map(cols => {
       const obj = {};
-      headers.forEach((h, i) => obj[h] = (cols[i] ?? '').toString().trim());
-      obj.retail_price_ore = parseInt(obj.retail_price_ore || '0', 10);
-      obj.lead_days        = parseInt(obj.lead_days || '5', 10);
-      obj.active           = String(obj.active || '').toLowerCase() !== 'false';
+      headers.forEach((h, i) => obj[h] = (cols[i] ?? "").trim());
+
+      // Normalisera vissa typer
+      if (obj.retail_price_ore) obj.retail_price_ore = parseInt(obj.retail_price_ore, 10) || 0;
+      if (obj.lead_days) obj.lead_days = parseInt(obj.lead_days, 10) || 0;
+      if (typeof obj.vegan === 'string') obj.vegan = /^true$/i.test(obj.vegan) || obj.vegan === '1' || obj.vegan.toLowerCase() === 'ja';
+
       return obj;
-    }).filter(p => p.sku && p.active);
+    }).filter(p => p.sku && p.name);
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      headers: { "Content-Type": "application/json; charset=utf-8" },
       body: JSON.stringify({ products })
     };
   } catch (e) {
-    return { statusCode: 500, body: 'Catalog error: ' + e.message };
+    return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
   }
+};
+
+// Minimal robust CSV-parser (celler kan vara "citerade, med, kommatecken")
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i+1];
+
+    if (ch === '"' ) {
+      if (inQuotes && next === '"') { // escaped quote
+        cell += '"'; i++; continue;
+      }
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === ',' && !inQuotes) { row.push(cell); cell = ''; continue; }
+    if ((ch === '\n' || ch === '\r') && !inQuotes) {
+      if (cell.length || row.length) { row.push(cell); rows.push(row); row = []; cell = ''; }
+      // swallow \r\n pairs
+      if (ch === '\r' && next === '\n') { i++; }
+      continue;
+    }
+    cell += ch;
+  }
+  if (cell.length || row.length) { row.push(cell); rows.push(row); }
+  return rows;
 }
