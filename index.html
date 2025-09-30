@@ -13,7 +13,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <a href="/" class="brand brand-logo" aria-label="La Familia Health">
-        <!-- Ändra filnamn om din logo heter något annat -->
+        <!-- Ändra filnamn om loggan heter något annat -->
         <img src="assets/LaFamilia_health_Logo.jpg" alt="La Familia Health" />
         <span class="brand-text">LaFamilia Health</span>
       </a>
@@ -88,10 +88,21 @@
     </div>
   </div>
 
+  <!-- Produktdetaljer (Läs mer) -->
+  <div id="detailsModal" class="modal">
+    <div class="modal-inner">
+      <div class="modal-head">
+        <h3 id="detailsTitle">Paketdetaljer</h3>
+        <button class="icon-btn" id="detailsClose" aria-label="Stäng">✕</button>
+      </div>
+      <div id="detailsBody" class="modal-body"></div>
+    </div>
+  </div>
+
   <!-- App-logik -->
   <script src="app.js"></script>
   <script>
-    // Klick/tangent för att öppna kundvagnen via sammanfattningen i headern
+    // Öppna kundvagn via sammanfattningen i headern (klick + tangent)
     (function(){
       const el = document.getElementById('cartSummary');
       if(!el) return;
